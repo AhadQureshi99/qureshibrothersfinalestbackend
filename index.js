@@ -11,7 +11,10 @@ require("colors");
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: [
+      "http://localhost:5173",
+      "https://qureshi-brothers-dashboard.netlify.app",
+    ],
     credentials: true,
   })
 );
