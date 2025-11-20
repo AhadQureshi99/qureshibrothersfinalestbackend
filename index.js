@@ -14,6 +14,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "https://qureshi-brothers-dashboard.netlify.app",
+      "https://qureshi-brothers-frontend-ujhe.vercel.app"
     ],
     credentials: true,
   })

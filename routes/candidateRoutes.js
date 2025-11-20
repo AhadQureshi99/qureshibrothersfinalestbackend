@@ -16,5 +16,6 @@ const multerFields = upload.fields([
 router.get("/", getCandidates);
 router.get("/:id", getCandidateById);
 router.post("/", multerFields, createCandidate);
+router.put("/:id", updateCandidate);
 
 module.exports = router;

@@ -118,4 +118,34 @@ const getCandidateById = async (req, res) => {
   }
 };
 
-module.exports = { upload, createCandidate, getCandidates, getCandidateById };
+// Handler: update candidate
+const updateCandidate = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    const candidate = await Candidate.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!candidate) {
+      return res.status(404).json({ message: "Candidate not found" });
+    }
+
+    res
+      .status(200)
+      .json({ message: "Candidate updated successfully", candidate });
+  } catch (err) {
+    console.error("updateCandidate error", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+module.exports = {
+  upload,
+  createCandidate,
+  getCandidates,
+  getCandidateById,
+  updateCandidate,
+};
