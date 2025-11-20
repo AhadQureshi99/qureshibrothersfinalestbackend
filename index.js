@@ -124,11 +124,15 @@ app.use(
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 3001;
-const server = app.listen(PORT, () => console.log(`Server started on port: ${PORT}`));
+const server = app.listen(PORT, () =>
+  console.log(`Server started on port: ${PORT}`)
+);
 
 server.on("error", (err) => {
   if (err && err.code === "EADDRINUSE") {
-    console.error(`Port ${PORT} is already in use. Ensure no other process is listening on this port and try again.`);
+    console.error(
+      `Port ${PORT} is already in use. Ensure no other process is listening on this port and try again.`
+    );
   } else {
     console.error("Server error:", err);
   }
