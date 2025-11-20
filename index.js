@@ -14,11 +14,15 @@ app.use(
     origin: [
       "http://localhost:5173",
       "https://qureshi-brothers-dashboard.netlify.app",
-      "https://qureshi-brothers-frontend-ujhe.vercel.app"
+      "https://qureshi-brothers-frontend-ujhe.vercel.app",
+      "https://api.cloudandroots.com"        // ⬅️ ADD THIS
     ],
     credentials: true,
   })
 );
+
+app.options("*", cors()); // IMPORTANT for preflight
+
 
 connectDB();
 
