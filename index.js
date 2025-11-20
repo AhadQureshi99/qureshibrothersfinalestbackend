@@ -9,19 +9,20 @@ const app = express();
 require("dotenv").config();
 require("colors");
 
-app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      "https://qureshi-brothers-dashboard.netlify.app",
-      "https://qureshi-brothers-frontend-ujhe.vercel.app",
-      "https://api.cloudandroots.com",
-    ],
-    credentials: true,
-  })
-);
+const corsOptions = {
+  origin: [
+    "http://localhost:5173",
+    "https://qureshi-brothers-dashboard.netlify.app",
+    "https://qureshi-brothers-frontend-ujhe.vercel.app",
+    "https://api.cloudandroots.com",
+  ],
+  credentials: true,
+};
 
-app.options("*", cors()); // IMPORTANT for preflight
+app.use(cors(corsOptions));
+
+// Use the same cors options for preflight responses so OPTIONS replies include the same headers
+app.options("*", cors(corsOptions)); // IMPORTANT for preflight
 
 connectDB();
 
@@ -123,7 +124,18 @@ app.use(
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Server started on port: ${PORT}`));
+const server = app.listen(PORT, () => console.log(`Server started on port: ${PORT}`));
+
+server.on("error", (err) => {
+  if (err && err.code === "EADDRINUSE") {
+    console.error(`Port ${PORT} is already in use. Ensure no other process is listening on this port and try again.`);
+  } else {
+    console.error("Server error:", err);
+  }
+});
+
+// Export app for testing or programmatic control
+module.exports = app;
 
 // Catch unhandled errors and promise rejections to aid debugging in dev
 process.on("uncaughtException", (err) => {

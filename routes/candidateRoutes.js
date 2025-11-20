@@ -5,6 +5,7 @@ const {
   createCandidate,
   getCandidates,
   getCandidateById,
+  updateCandidate,
 } = require("../Controllers/candidateController");
 
 // Accept profilePicture (single) and documents (array)
