@@ -30,7 +30,41 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Serve static files
-app.use("/Uploads", express.static(path.join(__dirname, "Uploads")));
+// Serve static files under /Uploads and force inline Content-Disposition so
+// browsers will attempt to view documents (PDFs, images) inline instead of
+// prompting for download. Also ensure CORS headers are present for these
+// responses.
+app.use("/Uploads", (req, res, next) => {
+  // Allow the frontend origins already configured in corsOptions. If the
+  // request origin is present and allowed, echo it; otherwise fall back to '*'.
+  try {
+    const origin = req.headers.origin;
+    if (
+      origin &&
+      corsOptions &&
+      Array.isArray(corsOptions.origin) &&
+      corsOptions.origin.includes(origin)
+    ) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+    } else {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+    }
+  } catch (e) {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+  }
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  return next();
+});
+app.use(
+  "/Uploads",
+  express.static(path.join(__dirname, "Uploads"), {
+    setHeaders: (res, filePath) => {
+      // Prefer inline display when possible
+      res.setHeader("Content-Disposition", "inline");
+      // Let express set Content-Type based on the file extension as usual
+    },
+  })
+);
 
 app.use("/api/users/", require("./routes/userRoutes"));
 app.use("/api/expenses/", require("./routes/expenseRoutes"));

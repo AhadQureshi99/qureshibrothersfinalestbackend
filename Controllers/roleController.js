@@ -4,7 +4,22 @@ const asyncHandler = require("express-async-handler");
 // Get all roles
 const getAllRoles = asyncHandler(async (req, res) => {
   const roles = await Role.find({});
-  res.status(200).json(roles);
+
+  // Fetch users for each role
+  const User = require("../models/userModel");
+  const rolesWithUsers = await Promise.all(
+    roles.map(async (role) => {
+      const users = await User.find({ roleId: role._id }).select(
+        "name firstName lastName username email"
+      );
+      return {
+        ...role.toObject(),
+        users: users,
+      };
+    })
+  );
+
+  res.status(200).json(rolesWithUsers);
 });
 
 // Create a new role

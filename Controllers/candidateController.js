@@ -36,6 +36,7 @@ const createCandidate = async (req, res) => {
       email: body.email,
       contact: body.mobile,
       passportIssueDate: body.passportIssueDate,
+      passport: body.passport,
       passportExpiryDate: body.passportExpiryDate,
       maritalStatus: body.maritalStatus,
       companyNameEnglish: body.companyNameEnglish,
@@ -144,10 +145,84 @@ const updateCandidate = async (req, res) => {
   }
 };
 
+// Upload/replace profile picture for existing candidate
+const uploadProfilePicture = async (req, res) => {
+  try {
+    const id = req.params.id;
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+    const baseUrl =
+      process.env.API_URL || `http://localhost:${process.env.PORT || 3001}`;
+
+    const url = `${baseUrl}/Uploads/candidates/${req.file.filename}`;
+    const candidate = await Candidate.findByIdAndUpdate(
+      id,
+      { profilePicture: url },
+      { new: true }
+    );
+
+    if (!candidate)
+      return res.status(404).json({ message: "Candidate not found" });
+
+    res.status(200).json({ message: "Profile picture uploaded", candidate });
+  } catch (err) {
+    console.error("uploadProfilePicture error", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Handler: delete candidate (also clean up uploaded files if present)
+const deleteCandidate = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const candidate = await Candidate.findById(id);
+    if (!candidate)
+      return res.status(404).json({ message: "Candidate not found" });
+
+    // remove profile picture file if it points to Uploads/candidates
+    try {
+      if (candidate.profilePicture) {
+        const fname = path.basename(candidate.profilePicture);
+        const filePath = path.join(uploadDir, fname);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+
+      // remove document files if present
+      if (Array.isArray(candidate.documents)) {
+        for (const doc of candidate.documents) {
+          if (doc && doc.filename) {
+            const dpath = path.join(uploadDir, doc.filename);
+            if (fs.existsSync(dpath)) {
+              fs.unlinkSync(dpath);
+            }
+          }
+        }
+      }
+    } catch (fileErr) {
+      // don't block deletion if cleanup fails; just log
+      console.warn(
+        "Failed to remove uploaded files for candidate",
+        id,
+        fileErr
+      );
+    }
+
+    await Candidate.findByIdAndDelete(id);
+    res.status(200).json({ message: "Candidate deleted" });
+  } catch (err) {
+    console.error("deleteCandidate error", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   upload,
   createCandidate,
   getCandidates,
   getCandidateById,
   updateCandidate,
+  uploadProfilePicture,
+  deleteCandidate,
 };

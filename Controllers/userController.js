@@ -311,6 +311,20 @@ const loginUser = async (req, res) => {
       return res.status(404).json({ message: "User does not exist" });
     }
 
+    console.log(`[DEBUG] Login attempt for user ${email}:`, {
+      isActive: user.isActive,
+      verified: user.verified,
+    });
+
+    if (!user.isActive) {
+      console.log(`[DEBUG] User ${email} is inactive, blocking login`);
+      return res
+        .status(403)
+        .json({
+          message: "User account is inactive. Please contact administrator.",
+        });
+    }
+
     if (!user.verified) {
       return res
         .status(403)
@@ -322,6 +336,7 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid password" });
     }
 
+    console.log(`[DEBUG] Login successful for user ${email}`);
     const accessToken = user.generateAccessToken();
     const loggedInUser = await User.findById(user._id).select(
       "-password -otp -otpExpires"
@@ -548,7 +563,9 @@ const listAllUsers = async (req, res) => {
   try {
     if (req.user.role !== "superadmin")
       return res.status(403).json({ message: "Forbidden" });
-    const users = await User.find().select("-password -otp -otpExpires");
+    const users = await User.find()
+      .select("-password -otp -otpExpires")
+      .populate("roleId", "name permissions");
     res.status(200).json({ users });
   } catch (error) {
     console.error("listAllUsers error:", error);
@@ -597,6 +614,8 @@ const updateUser = async (req, res) => {
       username,
       email,
       role,
+      roleId,
+      permissions,
       firstName,
       lastName,
       fatherName,
@@ -611,15 +630,17 @@ const updateUser = async (req, res) => {
     if (username) user.username = username;
     if (email) user.email = email;
     if (role) user.role = role;
+    if (roleId) user.roleId = roleId;
+    if (permissions) user.permissions = permissions;
     if (firstName !== undefined) user.firstName = firstName;
     if (lastName !== undefined) user.lastName = lastName;
     if (fatherName !== undefined) user.fatherName = fatherName;
     if (contactNo !== undefined) user.contactNo = contactNo;
     if (cnic !== undefined) user.cnic = cnic;
     await user.save();
-    const safe = await User.findById(user._id).select(
-      "-password -otp -otpExpires"
-    );
+    const safe = await User.findById(user._id)
+      .select("-password -otp -otpExpires")
+      .populate("roleId");
     res.status(200).json({ message: "User updated", user: safe });
   } catch (error) {
     console.error("updateUser error:", error);
@@ -652,20 +673,50 @@ module.exports.deleteUser = deleteUser;
 const toggleUserStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { isActive } = req.body;
+    let { isActive } = req.body;
+
+    // Ensure isActive is a boolean
+    isActive = Boolean(isActive);
+
+    console.log(
+      `[DEBUG] Toggle request received - ID: ${id}, isActive param: ${isActive}`
+    );
+
     if (req.user.role !== "superadmin") {
       return res.status(403).json({ message: "Forbidden" });
     }
+
+    // Fetch the user
     const user = await User.findById(id);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    console.log(`[DEBUG] Current user status: isActive=${user.isActive}`);
+    console.log(`[DEBUG] Setting new status to: isActive=${isActive}`);
+
+    // Update the isActive field
     user.isActive = isActive;
+
+    // Save to database
     await user.save();
-    const safe = await User.findById(user._id).select(
+
+    console.log(`[DEBUG] After save: isActive=${user.isActive}`);
+
+    // Fetch fresh from DB to confirm
+    const updatedUser = await User.findById(id).select(
       "-password -otp -otpExpires"
     );
-    res.status(200).json({ message: "Status updated", user: safe });
+    console.log(
+      `[DEBUG] Fresh from DB: email=${updatedUser.email}, isActive=${updatedUser.isActive}`
+    );
+
+    res.status(200).json({
+      message: "Status updated successfully",
+      user: updatedUser,
+    });
   } catch (error) {
-    console.error("toggleUserStatus error:", error);
+    console.error("[ERROR] toggleUserStatus error:", error);
     res.status(500).json({ message: error.message });
   }
 };

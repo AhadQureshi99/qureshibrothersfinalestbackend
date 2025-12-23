@@ -24,6 +24,11 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin", "hr", "accountant", "superadmin"],
       default: "user",
     },
+    roleId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Role",
+      default: null,
+    },
     verified: {
       type: Boolean,
       default: false,
