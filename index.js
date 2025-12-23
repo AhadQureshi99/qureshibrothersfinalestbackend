@@ -18,6 +18,7 @@ const corsOptions = {
     "https://qureshi-brothers-frontend-qonsb86bf-ahad-qureshis-projects.vercel.app",
     "https://qureshi-brothers-frontend-dmb3scgfo-ahad-qureshis-projects.vercel.app",
     "https://qureshi-brothers-frontend-8b3q3gm2c-ahad-qureshis-projects.vercel.app",
+    "https://qureshi-brothers-frontend-ujhe-5qtha3i9u-ahad-qureshis-projects.vercel.app",
   ],
   credentials: true,
 };
