@@ -34,11 +34,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Serve static files
-// Serve static files under /Uploads and force inline Content-Disposition so
+// Serve static files under /uploads and force inline Content-Disposition so
 // browsers will attempt to view documents (PDFs, images) inline instead of
 // prompting for download. Also ensure CORS headers are present for these
 // responses.
-app.use("/Uploads", (req, res, next) => {
+app.use("/uploads", (req, res, next) => {
   // Allow the frontend origins already configured in corsOptions. If the
   // request origin is present and allowed, echo it; otherwise fall back to '*'.
   try {
@@ -60,8 +60,8 @@ app.use("/Uploads", (req, res, next) => {
   return next();
 });
 app.use(
-  "/Uploads",
-  express.static(path.join(__dirname, "Uploads"), {
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"), {
     setHeaders: (res, filePath) => {
       // Prefer inline display when possible
       res.setHeader("Content-Disposition", "inline");
