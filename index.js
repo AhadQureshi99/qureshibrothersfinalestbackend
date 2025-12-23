@@ -15,6 +15,7 @@ const corsOptions = {
     "https://qureshi-brothers-dashboard.netlify.app",
     "https://qureshi-brothers-frontend-ujhe.vercel.app",
     "https://api.cloudandroots.com",
+    "https://qureshi-brothers-frontend-qonsb86bf-ahad-qureshis-projects.vercel.app",
   ],
   credentials: true,
 };
