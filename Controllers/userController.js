@@ -318,11 +318,9 @@ const loginUser = async (req, res) => {
 
     if (!user.isActive) {
       console.log(`[DEBUG] User ${email} is inactive, blocking login`);
-      return res
-        .status(403)
-        .json({
-          message: "User account is inactive. Please contact administrator.",
-        });
+      return res.status(403).json({
+        message: "User account is inactive. Please contact administrator.",
+      });
     }
 
     if (!user.verified) {
@@ -440,10 +438,8 @@ const uploadProfilePicture = async (req, res) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const fileUrl = `${
-      process.env.API_URL || "http://localhost:3001"
-    }/Uploads/profilePictures/${req.file.filename}`;
-    console.log("File uploaded to:", fileUrl);
+    const filename = req.file.filename;
+    console.log("File uploaded:", filename);
 
     const user = await User.findById(userId);
     if (!user) {
@@ -451,9 +447,12 @@ const uploadProfilePicture = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    user.profilePicture = fileUrl;
+    user.profilePicture = filename;
     await user.save();
-    console.log("User updated with profile picture:", user.profilePicture);
+    console.log(
+      "User updated with profile picture filename:",
+      user.profilePicture
+    );
 
     const updatedUser = await User.findById(user._id).select(
       "-password -otp -otpExpires"
