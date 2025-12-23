@@ -20,6 +20,7 @@ router.get("/", getCandidates);
 router.get("/:id", getCandidateById);
 router.post("/", multerFields, createCandidate);
 router.put("/:id", updateCandidate);
+router.patch("/:id", updateCandidate);
 router.delete("/:id", deleteCandidate);
 
 // route to upload/update profile picture for existing candidate
