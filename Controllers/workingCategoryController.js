@@ -1,4 +1,5 @@
 const WorkingCategory = require("../models/workingCategoryModel");
+const { createLog } = require("./activityLogController");
 const JobCategory = require("../models/jobCategoryModel");
 const SubCategory = require("../models/subCategoryModel");
 
@@ -28,6 +29,19 @@ const createWorkingCategory = async (req, res) => {
       subCategory,
       name,
       description,
+    });
+    // Log activity
+    await createLog({
+      action: "created",
+      entityType: "WorkingCategory",
+      entityId: workingCategory._id,
+      entityName: workingCategory.name,
+      description: `New working category ${
+        workingCategory.name
+      } has been created by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
     });
     return res
       .status(201)
@@ -89,6 +103,19 @@ const updateWorkingCategory = async (req, res) => {
       return res.status(404).json({ message: "Working category not found" });
     }
 
+    // Log activity
+    await createLog({
+      action: "updated",
+      entityType: "WorkingCategory",
+      entityId: updated._id,
+      entityName: updated.name,
+      description: `Working category ${updated.name} has been updated by ${
+        req.user?.username || "System"
+      }`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({
       message: "Working category updated",
       workingCategory: updated,
@@ -108,6 +135,19 @@ const deleteWorkingCategory = async (req, res) => {
     if (!deleted) {
       return res.status(404).json({ message: "Working category not found" });
     }
+    // Log activity
+    await createLog({
+      action: "deleted",
+      entityType: "WorkingCategory",
+      entityId: deleted._id,
+      entityName: deleted.name,
+      description: `The Working category ${deleted.name} has been deleted by ${
+        req.user?.username || "System"
+      }`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({ message: "Working category deleted" });
   } catch (err) {
     console.error(err);

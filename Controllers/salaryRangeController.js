@@ -1,4 +1,5 @@
 const SalaryRange = require("../models/salaryRangeModel");
+const { createLog } = require("./activityLogController");
 
 const createSalaryRange = async (req, res) => {
   try {
@@ -16,6 +17,19 @@ const createSalaryRange = async (req, res) => {
     });
 
     await newSalaryRange.save();
+    // Log activity
+    await createLog({
+      action: "created",
+      entityType: "SalaryRange",
+      entityId: newSalaryRange._id,
+      entityName: newSalaryRange.salaryRange || newSalaryRange._id,
+      description: `New salary range ${
+        newSalaryRange.salaryRange || newSalaryRange._id
+      } has been created by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?.id,
+      meta: {},
+    });
     res.status(201).json({
       message: "Salary Range created successfully",
       salaryRange: newSalaryRange,
@@ -59,6 +73,19 @@ const updateSalaryRange = async (req, res) => {
       return res.status(404).json({ message: "Salary Range not found" });
     }
 
+    // Log activity
+    await createLog({
+      action: "updated",
+      entityType: "SalaryRange",
+      entityId: updatedSalaryRange._id,
+      entityName: updatedSalaryRange.salaryRange || updatedSalaryRange._id,
+      description: `Salary Range ${
+        updatedSalaryRange.salaryRange || updatedSalaryRange._id
+      } has been updated by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?.id,
+      meta: {},
+    });
     res.status(200).json({
       message: "Salary Range updated successfully",
       salaryRange: updatedSalaryRange,
@@ -99,7 +126,19 @@ const deleteSalaryRange = async (req, res) => {
     if (!deletedSalaryRange) {
       return res.status(404).json({ message: "Salary Range not found" });
     }
-
+    // Log activity
+    await createLog({
+      action: "deleted",
+      entityType: "SalaryRange",
+      entityId: deletedSalaryRange._id,
+      entityName: deletedSalaryRange.salaryRange || deletedSalaryRange._id,
+      description: `The Salary Range ${
+        deletedSalaryRange.salaryRange || deletedSalaryRange._id
+      } has been deleted by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?.id,
+      meta: {},
+    });
     res.status(200).json({ message: "Salary Range deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });

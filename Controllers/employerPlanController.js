@@ -28,6 +28,7 @@ const getEmployerPlan = async (req, res) => {
 };
 
 // Create employer plan
+const { createLog } = require("./activityLogController");
 const createEmployerPlan = async (req, res) => {
   try {
     const {
@@ -62,6 +63,19 @@ const createEmployerPlan = async (req, res) => {
     });
 
     await plan.save();
+    // Log activity
+    await createLog({
+      action: "created",
+      entityType: "EmployerPlan",
+      entityId: plan._id,
+      entityName: plan.name || plan._id,
+      description: `New employer plan ${
+        plan.name || plan._id
+      } has been created by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     res
       .status(201)
       .json({ message: "Employer plan created successfully", plan });
@@ -114,6 +128,19 @@ const updateEmployerPlan = async (req, res) => {
     plan.featuredEmployerAmount = parseFloat(featuredEmployerAmount);
 
     await plan.save();
+    // Log activity
+    await createLog({
+      action: "updated",
+      entityType: "EmployerPlan",
+      entityId: plan._id,
+      entityName: plan.name || plan._id,
+      description: `Employer plan ${
+        plan.name || plan._id
+      } has been updated by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     res
       .status(200)
       .json({ message: "Employer plan updated successfully", plan });
@@ -131,6 +158,19 @@ const deleteEmployerPlan = async (req, res) => {
     if (!plan) {
       return res.status(404).json({ message: "Employer plan not found" });
     }
+    // Log activity
+    await createLog({
+      action: "deleted",
+      entityType: "EmployerPlan",
+      entityId: plan._id,
+      entityName: plan.name || plan._id,
+      description: `The Employer plan ${
+        plan.name || plan._id
+      } has been deleted by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     res.status(200).json({ message: "Employer plan deleted successfully" });
   } catch (error) {
     res

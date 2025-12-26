@@ -1,4 +1,5 @@
 const TestType = require("../models/testTypeModel");
+const { createLog } = require("./activityLogController");
 
 // Create test type
 const createTestType = async (req, res) => {
@@ -9,7 +10,19 @@ const createTestType = async (req, res) => {
       testType,
       createdBy: req.user._id,
     });
-
+    // Log activity
+    await createLog({
+      action: "created",
+      entityType: "TestType",
+      entityId: testTypeDoc._id,
+      entityName: testTypeDoc.testType || testTypeDoc._id,
+      description: `New test type ${
+        testTypeDoc.testType || testTypeDoc._id
+      } has been created by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.status(201).json({
       message: "Test Type created successfully",
       testType: testTypeDoc,
@@ -49,6 +62,19 @@ const updateTestType = async (req, res) => {
       return res.status(404).json({ message: "Test Type not found" });
     }
 
+    // Log activity
+    await createLog({
+      action: "updated",
+      entityType: "TestType",
+      entityId: updatedTestType._id,
+      entityName: updatedTestType.testType || updatedTestType._id,
+      description: `Test Type ${
+        updatedTestType.testType || updatedTestType._id
+      } has been updated by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({
       message: "Test Type updated successfully",
       testType: updatedTestType,
@@ -69,7 +95,20 @@ const deleteTestType = async (req, res) => {
       return res.status(404).json({ message: "Test Type not found" });
     }
 
-    await TestType.findByIdAndDelete(id);
+    const deleted = await TestType.findByIdAndDelete(id);
+    // Log activity
+    await createLog({
+      action: "deleted",
+      entityType: "TestType",
+      entityId: deleted?._id,
+      entityName: deleted?.testType || deleted?._id,
+      description: `The Test Type ${
+        deleted?.testType || deleted?._id
+      } has been deleted by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({ message: "Test Type deleted successfully" });
   } catch (err) {
     console.error(err);

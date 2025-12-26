@@ -1,4 +1,5 @@
 const Job = require("../models/jobModel");
+const { createLog } = require("./activityLogController");
 const asyncHandler = require("express-async-handler");
 
 // @desc    Get all jobs
@@ -143,7 +144,19 @@ const createJob = asyncHandler(async (req, res) => {
     "createdBy",
     "username email"
   );
-
+  // Log activity
+  await createLog({
+    action: "created",
+    entityType: "Job",
+    entityId: populatedJob._id,
+    entityName: populatedJob.jobTitle,
+    description: `New job ${populatedJob.jobTitle} has been created by ${
+      req.user?.username || "System"
+    }`,
+    performedBy: req.user?.username || "System",
+    performedById: req.user?._id,
+    meta: {},
+  });
   res.status(201).json({
     message: "Job created successfully",
     job: populatedJob,
@@ -256,6 +269,19 @@ const updateJob = asyncHandler(async (req, res) => {
     "username email"
   );
 
+  // Log activity
+  await createLog({
+    action: "updated",
+    entityType: "Job",
+    entityId: populatedJob._id,
+    entityName: populatedJob.jobTitle,
+    description: `Job ${populatedJob.jobTitle} has been updated by ${
+      req.user?.username || "System"
+    }`,
+    performedBy: req.user?.username || "System",
+    performedById: req.user?._id,
+    meta: {},
+  });
   res.status(200).json({
     message: "Job updated successfully",
     job: populatedJob,
@@ -274,7 +300,19 @@ const deleteJob = asyncHandler(async (req, res) => {
   }
 
   await job.deleteOne();
-
+  // Log activity
+  await createLog({
+    action: "deleted",
+    entityType: "Job",
+    entityId: job._id,
+    entityName: job.jobTitle,
+    description: `The Job ${job.jobTitle} has been deleted by ${
+      req.user?.username || "System"
+    }`,
+    performedBy: req.user?.username || "System",
+    performedById: req.user?._id,
+    meta: {},
+  });
   res.status(200).json({
     message: "Job deleted successfully",
   });

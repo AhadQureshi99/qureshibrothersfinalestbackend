@@ -1,4 +1,5 @@
 const EducationLevel = require("../models/educationLevelModel");
+const { createLog } = require("./activityLogController");
 
 // Create education level
 const createEducationLevel = async (req, res) => {
@@ -9,7 +10,19 @@ const createEducationLevel = async (req, res) => {
       name,
       createdBy: req.user._id,
     });
-
+    // Log activity
+    await createLog({
+      action: "created",
+      entityType: "EducationLevel",
+      entityId: educationLevel._id,
+      entityName: educationLevel.name || educationLevel._id,
+      description: `New education level ${
+        educationLevel.name || educationLevel._id
+      } has been created by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.status(201).json({
       message: "Education Level created successfully",
       educationLevel,
@@ -54,6 +67,19 @@ const updateEducationLevel = async (req, res) => {
       return res.status(404).json({ message: "Education Level not found" });
     }
 
+    // Log activity
+    await createLog({
+      action: "updated",
+      entityType: "EducationLevel",
+      entityId: updatedEducationLevel._id,
+      entityName: updatedEducationLevel.name || updatedEducationLevel._id,
+      description: `Education Level ${
+        updatedEducationLevel.name || updatedEducationLevel._id
+      } has been updated by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({
       message: "Education Level updated successfully",
       educationLevel: updatedEducationLevel,
@@ -79,7 +105,20 @@ const deleteEducationLevel = async (req, res) => {
       return res.status(404).json({ message: "Education Level not found" });
     }
 
-    await EducationLevel.findByIdAndDelete(id);
+    const deleted = await EducationLevel.findByIdAndDelete(id);
+    // Log activity
+    await createLog({
+      action: "deleted",
+      entityType: "EducationLevel",
+      entityId: deleted?._id,
+      entityName: deleted?.name || deleted?._id,
+      description: `The Education Level ${
+        deleted?.name || deleted?._id
+      } has been deleted by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({ message: "Education Level deleted successfully" });
   } catch (err) {
     console.error(err);

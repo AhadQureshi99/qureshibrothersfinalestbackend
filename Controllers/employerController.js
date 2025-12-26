@@ -29,6 +29,7 @@ const getEmployer = async (req, res) => {
 };
 
 // Create employer
+const { createLog } = require("./activityLogController");
 const createEmployer = async (req, res) => {
   try {
     const {
@@ -101,6 +102,19 @@ const createEmployer = async (req, res) => {
     });
 
     await employer.save();
+    // Log activity
+    await createLog({
+      action: "created",
+      entityType: "Employer",
+      entityId: employer._id,
+      entityName: employer.companyName || employer._id,
+      description: `New employer ${
+        employer.companyName || employer._id
+      } has been created by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     res.status(201).json({
       message: "Employer created successfully",
       employer: employer.toObject({ getters: true }),
@@ -189,6 +203,19 @@ const updateEmployer = async (req, res) => {
     employer.files = files;
 
     await employer.save();
+    // Log activity
+    await createLog({
+      action: "updated",
+      entityType: "Employer",
+      entityId: employer._id,
+      entityName: employer.companyName || employer._id,
+      description: `Employer ${
+        employer.companyName || employer._id
+      } has been updated by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     res.status(200).json({
       message: "Employer updated successfully",
       employer: employer.toObject({ getters: true }),
@@ -207,6 +234,19 @@ const deleteEmployer = async (req, res) => {
     if (!employer) {
       return res.status(404).json({ message: "Employer not found" });
     }
+    // Log activity
+    await createLog({
+      action: "deleted",
+      entityType: "Employer",
+      entityId: employer._id,
+      entityName: employer.companyName || employer._id,
+      description: `The Employer ${
+        employer.companyName || employer._id
+      } has been deleted by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     res.status(200).json({ message: "Employer deleted successfully" });
   } catch (error) {
     res

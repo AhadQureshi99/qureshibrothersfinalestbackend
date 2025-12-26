@@ -1,4 +1,5 @@
 const EducationCategory = require("../models/educationCategoryModel");
+const { createLog } = require("./activityLogController");
 
 // Create education category
 const createEducationCategory = async (req, res) => {
@@ -10,7 +11,19 @@ const createEducationCategory = async (req, res) => {
       description,
       createdBy: req.user._id,
     });
-
+    // Log activity
+    await createLog({
+      action: "created",
+      entityType: "EducationCategory",
+      entityId: educationCategory._id,
+      entityName: educationCategory.name || educationCategory._id,
+      description: `New education category ${
+        educationCategory.name || educationCategory._id
+      } has been created by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.status(201).json({
       message: "Education Category created successfully",
       educationCategory,
@@ -55,6 +68,19 @@ const updateEducationCategory = async (req, res) => {
       return res.status(404).json({ message: "Education Category not found" });
     }
 
+    // Log activity
+    await createLog({
+      action: "updated",
+      entityType: "EducationCategory",
+      entityId: updatedCategory._id,
+      entityName: updatedCategory.name || updatedCategory._id,
+      description: `Education Category ${
+        updatedCategory.name || updatedCategory._id
+      } has been updated by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({
       message: "Education Category updated successfully",
       educationCategory: updatedCategory,
@@ -80,7 +106,20 @@ const deleteEducationCategory = async (req, res) => {
       return res.status(404).json({ message: "Education Category not found" });
     }
 
-    await EducationCategory.findByIdAndDelete(id);
+    const deleted = await EducationCategory.findByIdAndDelete(id);
+    // Log activity
+    await createLog({
+      action: "deleted",
+      entityType: "EducationCategory",
+      entityId: deleted?._id,
+      entityName: deleted?.name || deleted?._id,
+      description: `The Education Category ${
+        deleted?.name || deleted?._id
+      } has been deleted by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({ message: "Education Category deleted successfully" });
   } catch (err) {
     console.error(err);

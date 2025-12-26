@@ -1,4 +1,5 @@
 const City = require("../models/cityModel");
+const { createLog } = require("./activityLogController");
 
 // Create city
 const createCity = async (req, res) => {
@@ -9,7 +10,19 @@ const createCity = async (req, res) => {
       name,
       createdBy: req.user._id,
     });
-
+    // Log activity
+    await createLog({
+      action: "created",
+      entityType: "City",
+      entityId: city._id,
+      entityName: city.name || city._id,
+      description: `New city ${city.name || city._id} has been created by ${
+        req.user?.username || "System"
+      }`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.status(201).json({
       message: "City created successfully",
       city,
@@ -52,6 +65,19 @@ const updateCity = async (req, res) => {
       return res.status(404).json({ message: "City not found" });
     }
 
+    // Log activity
+    await createLog({
+      action: "updated",
+      entityType: "City",
+      entityId: updatedCity._id,
+      entityName: updatedCity.name || updatedCity._id,
+      description: `City ${
+        updatedCity.name || updatedCity._id
+      } has been updated by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({
       message: "City updated successfully",
       city: updatedCity,
@@ -75,7 +101,20 @@ const deleteCity = async (req, res) => {
       return res.status(404).json({ message: "City not found" });
     }
 
-    await City.findByIdAndDelete(id);
+    const deleted = await City.findByIdAndDelete(id);
+    // Log activity
+    await createLog({
+      action: "deleted",
+      entityType: "City",
+      entityId: deleted?._id,
+      entityName: deleted?.name || deleted?._id,
+      description: `The City ${
+        deleted?.name || deleted?._id
+      } has been deleted by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({ message: "City deleted successfully" });
   } catch (err) {
     console.error(err);

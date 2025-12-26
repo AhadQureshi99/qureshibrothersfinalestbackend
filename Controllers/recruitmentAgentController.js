@@ -3,6 +3,7 @@ const path = require("path");
 const fs = require("fs");
 
 // Create recruitment agent
+const { createLog } = require("./activityLogController");
 const createRecruitmentAgent = async (req, res) => {
   try {
     const {
@@ -36,7 +37,19 @@ const createRecruitmentAgent = async (req, res) => {
       files,
       createdBy: req.user._id,
     });
-
+    // Log activity
+    await createLog({
+      action: "created",
+      entityType: "RecruitmentAgent",
+      entityId: recruitmentAgent._id,
+      entityName: recruitmentAgent.name || recruitmentAgent._id,
+      description: `New recruitment agent ${
+        recruitmentAgent.name || recruitmentAgent._id
+      } has been created by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.status(201).json({
       message: "Recruitment Agent created successfully",
       recruitmentAgent,
@@ -113,6 +126,19 @@ const updateRecruitmentAgent = async (req, res) => {
       return res.status(404).json({ message: "Recruitment Agent not found" });
     }
 
+    // Log activity
+    await createLog({
+      action: "updated",
+      entityType: "RecruitmentAgent",
+      entityId: updatedAgent._id,
+      entityName: updatedAgent.name || updatedAgent._id,
+      description: `Recruitment Agent ${
+        updatedAgent.name || updatedAgent._id
+      } has been updated by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({
       message: "Recruitment Agent updated successfully",
       recruitmentAgent: updatedAgent,
@@ -146,7 +172,20 @@ const deleteRecruitmentAgent = async (req, res) => {
       });
     }
 
-    await RecruitmentAgent.findByIdAndDelete(id);
+    const deleted = await RecruitmentAgent.findByIdAndDelete(id);
+    // Log activity
+    await createLog({
+      action: "deleted",
+      entityType: "RecruitmentAgent",
+      entityId: deleted?._id,
+      entityName: deleted?.name || deleted?._id,
+      description: `The Recruitment Agent ${
+        deleted?.name || deleted?._id
+      } has been deleted by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({ message: "Recruitment Agent deleted successfully" });
   } catch (err) {
     console.error(err);

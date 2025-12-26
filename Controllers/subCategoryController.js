@@ -2,6 +2,7 @@ const SubCategory = require("../models/subCategoryModel");
 const JobCategory = require("../models/jobCategoryModel");
 
 // Create sub category
+const { createLog } = require("./activityLogController");
 const createSubCategory = async (req, res) => {
   try {
     const { mainCategory, name, description } = req.body;
@@ -18,6 +19,19 @@ const createSubCategory = async (req, res) => {
       mainCategory,
       name,
       description,
+    });
+    // Log activity
+    await createLog({
+      action: "created",
+      entityType: "SubCategory",
+      entityId: subCategory._id,
+      entityName: subCategory.name || subCategory._id,
+      description: `New sub category ${
+        subCategory.name || subCategory._id
+      } has been created by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
     });
     return res
       .status(201)
@@ -66,6 +80,19 @@ const updateSubCategory = async (req, res) => {
       return res.status(404).json({ message: "Sub category not found" });
     }
 
+    // Log activity
+    await createLog({
+      action: "updated",
+      entityType: "SubCategory",
+      entityId: updated._id,
+      entityName: updated.name || updated._id,
+      description: `Sub category ${
+        updated.name || updated._id
+      } has been updated by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({ message: "Sub category updated", subCategory: updated });
   } catch (err) {
     console.error(err);
@@ -82,6 +109,19 @@ const deleteSubCategory = async (req, res) => {
     if (!deleted) {
       return res.status(404).json({ message: "Sub category not found" });
     }
+    // Log activity
+    await createLog({
+      action: "deleted",
+      entityType: "SubCategory",
+      entityId: deleted?._id,
+      entityName: deleted?.name || deleted?._id,
+      description: `The Sub category ${
+        deleted?.name || deleted?._id
+      } has been deleted by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({ message: "Sub category deleted" });
   } catch (err) {
     console.error(err);

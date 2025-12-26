@@ -3,6 +3,7 @@ const path = require("path");
 const fs = require("fs");
 
 // Create travel agent
+const { createLog } = require("./activityLogController");
 const createTravelAgent = async (req, res) => {
   try {
     const {
@@ -36,7 +37,19 @@ const createTravelAgent = async (req, res) => {
       files,
       createdBy: req.user._id,
     });
-
+    // Log activity
+    await createLog({
+      action: "created",
+      entityType: "TravelAgent",
+      entityId: travelAgent._id,
+      entityName: travelAgent.name || travelAgent._id,
+      description: `New travel agent ${
+        travelAgent.name || travelAgent._id
+      } has been created by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.status(201).json({
       message: "Travel Agent created successfully",
       travelAgent,
@@ -109,6 +122,19 @@ const updateTravelAgent = async (req, res) => {
       return res.status(404).json({ message: "Travel Agent not found" });
     }
 
+    // Log activity
+    await createLog({
+      action: "updated",
+      entityType: "TravelAgent",
+      entityId: updatedAgent._id,
+      entityName: updatedAgent.name || updatedAgent._id,
+      description: `Travel Agent ${
+        updatedAgent.name || updatedAgent._id
+      } has been updated by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({
       message: "Travel Agent updated successfully",
       travelAgent: updatedAgent,
@@ -142,7 +168,20 @@ const deleteTravelAgent = async (req, res) => {
       });
     }
 
-    await TravelAgent.findByIdAndDelete(id);
+    const deleted = await TravelAgent.findByIdAndDelete(id);
+    // Log activity
+    await createLog({
+      action: "deleted",
+      entityType: "TravelAgent",
+      entityId: deleted?._id,
+      entityName: deleted?.name || deleted?._id,
+      description: `The Travel Agent ${
+        deleted?.name || deleted?._id
+      } has been deleted by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({ message: "Travel Agent deleted successfully" });
   } catch (err) {
     console.error(err);

@@ -1,6 +1,7 @@
 const VerifyingInstitution = require("../models/verifyingInstitutionModel");
 
 // Create verifying institution
+const { createLog } = require("./activityLogController");
 const createVerifyingInstitution = async (req, res) => {
   try {
     const { name, type } = req.body;
@@ -10,7 +11,19 @@ const createVerifyingInstitution = async (req, res) => {
       type,
       createdBy: req.user._id,
     });
-
+    // Log activity
+    await createLog({
+      action: "created",
+      entityType: "VerifyingInstitution",
+      entityId: verifyingInstitution._id,
+      entityName: verifyingInstitution.name || verifyingInstitution._id,
+      description: `New verifying institution ${
+        verifyingInstitution.name || verifyingInstitution._id
+      } has been created by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.status(201).json({
       message: "Verifying Institution created successfully",
       verifyingInstitution,
@@ -57,6 +70,19 @@ const updateVerifyingInstitution = async (req, res) => {
         .json({ message: "Verifying Institution not found" });
     }
 
+    // Log activity
+    await createLog({
+      action: "updated",
+      entityType: "VerifyingInstitution",
+      entityId: updatedInstitution._id,
+      entityName: updatedInstitution.name || updatedInstitution._id,
+      description: `Verifying Institution ${
+        updatedInstitution.name || updatedInstitution._id
+      } has been updated by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({
       message: "Verifying Institution updated successfully",
       verifyingInstitution: updatedInstitution,
@@ -84,7 +110,20 @@ const deleteVerifyingInstitution = async (req, res) => {
         .json({ message: "Verifying Institution not found" });
     }
 
-    await VerifyingInstitution.findByIdAndDelete(id);
+    const deleted = await VerifyingInstitution.findByIdAndDelete(id);
+    // Log activity
+    await createLog({
+      action: "deleted",
+      entityType: "VerifyingInstitution",
+      entityId: deleted?._id,
+      entityName: deleted?.name || deleted?._id,
+      description: `The Verifying Institution ${
+        deleted?.name || deleted?._id
+      } has been deleted by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({ message: "Verifying Institution deleted successfully" });
   } catch (err) {
     console.error(err);

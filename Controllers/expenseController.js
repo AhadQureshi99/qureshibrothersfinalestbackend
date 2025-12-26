@@ -1,4 +1,5 @@
 const Expense = require("../models/expenseModel");
+const { createLog } = require("./activityLogController");
 const ExpenseRequest = require("../models/expenseRequestModel");
 
 // Create expense (admins and superadmins and users can add — per requirement admin can add without approval)
@@ -12,6 +13,19 @@ const createExpense = async (req, res) => {
       amount: Number(amount),
       remarks,
       createdBy: req.user._id,
+    });
+    // Log activity
+    await createLog({
+      action: "created",
+      entityType: "Expense",
+      entityId: expense._id,
+      entityName: expense.expenseName,
+      description: `New expense ${expense.expenseName} has been created by ${
+        req.user?.username || "System"
+      }`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: { amount: expense.amount },
     });
     return res.status(201).json({ message: "Expense created", expense });
   } catch (err) {
@@ -129,6 +143,19 @@ const updateExpense = async (req, res) => {
       req.body,
       { new: true }
     );
+    // Log activity
+    await createLog({
+      action: "updated",
+      entityType: "Expense",
+      entityId: updated?._id,
+      entityName: updated?.expenseName,
+      description: `Expense ${updated?.expenseName} has been updated by ${
+        req.user?.username || "System"
+      }`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: { amount: updated?.amount },
+    });
     return res.json({ message: "Expense updated", expense: updated });
   } catch (err) {
     console.error(err);
@@ -140,7 +167,20 @@ const deleteExpense = async (req, res) => {
   try {
     if (req.user.role !== "superadmin")
       return res.status(403).json({ message: "Forbidden" });
-    await Expense.findByIdAndDelete(req.params.expenseId);
+    const deleted = await Expense.findByIdAndDelete(req.params.expenseId);
+    // Log activity
+    await createLog({
+      action: "deleted",
+      entityType: "Expense",
+      entityId: deleted?._id,
+      entityName: deleted?.expenseName,
+      description: `The Expense ${deleted?.expenseName} has been deleted by ${
+        req.user?.username || "System"
+      }`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: { amount: deleted?.amount },
+    });
     return res.json({ message: "Expense deleted" });
   } catch (err) {
     console.error(err);

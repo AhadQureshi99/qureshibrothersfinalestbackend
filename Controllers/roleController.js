@@ -23,6 +23,7 @@ const getAllRoles = asyncHandler(async (req, res) => {
 });
 
 // Create a new role
+const { createLog } = require("./activityLogController");
 const createRole = asyncHandler(async (req, res) => {
   const { name, permissions } = req.body;
 
@@ -41,7 +42,19 @@ const createRole = asyncHandler(async (req, res) => {
     name: name.toLowerCase(),
     permissions: permissions || {},
   });
-
+  // Log activity
+  await createLog({
+    action: "created",
+    entityType: "Role",
+    entityId: role._id,
+    entityName: role.name || role._id,
+    description: `New role ${role.name || role._id} has been created by ${
+      req.user?.username || "System"
+    }`,
+    performedBy: req.user?.username || "System",
+    performedById: req.user?._id,
+    meta: {},
+  });
   res.status(201).json(role);
 });
 
@@ -73,6 +86,19 @@ const updateRole = asyncHandler(async (req, res) => {
   }
 
   await role.save();
+  // Log activity
+  await createLog({
+    action: "updated",
+    entityType: "Role",
+    entityId: role._id,
+    entityName: role.name || role._id,
+    description: `Role ${role.name || role._id} has been updated by ${
+      req.user?.username || "System"
+    }`,
+    performedBy: req.user?.username || "System",
+    performedById: req.user?._id,
+    meta: {},
+  });
   res.status(200).json(role);
 });
 
@@ -86,7 +112,20 @@ const deleteRole = asyncHandler(async (req, res) => {
     throw new Error("Role not found");
   }
 
-  await Role.findByIdAndDelete(id);
+  const deleted = await Role.findByIdAndDelete(id);
+  // Log activity
+  await createLog({
+    action: "deleted",
+    entityType: "Role",
+    entityId: deleted?._id,
+    entityName: deleted?.name || deleted?._id,
+    description: `The Role ${
+      deleted?.name || deleted?._id
+    } has been deleted by ${req.user?.username || "System"}`,
+    performedBy: req.user?.username || "System",
+    performedById: req.user?._id,
+    meta: {},
+  });
   res.status(200).json({ message: "Role deleted successfully" });
 });
 

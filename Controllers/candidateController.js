@@ -1,4 +1,5 @@
 const Candidate = require("../models/candidateModel");
+const { createLog } = require("./activityLogController");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
@@ -89,6 +90,19 @@ const createCandidate = async (req, res) => {
     }
 
     await candidate.save();
+    // Log activity
+    await createLog({
+      action: "created",
+      entityType: "Candidate",
+      entityId: candidate._id,
+      entityName: candidate.name,
+      description: `New candidate ${candidate.name} has been created by ${
+        req.user?.username || "System"
+      }`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     res.status(201).json({ message: "Candidate created", candidate });
   } catch (err) {
     console.error("createCandidate error", err);
@@ -136,6 +150,19 @@ const updateCandidate = async (req, res) => {
       return res.status(404).json({ message: "Candidate not found" });
     }
 
+    // Log activity
+    await createLog({
+      action: "updated",
+      entityType: "Candidate",
+      entityId: candidate._id,
+      entityName: candidate.name,
+      description: `Candidate ${candidate.name} has been updated by ${
+        req.user?.username || "System"
+      }`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     res
       .status(200)
       .json({ message: "Candidate updated successfully", candidate });
@@ -210,6 +237,19 @@ const deleteCandidate = async (req, res) => {
     }
 
     await Candidate.findByIdAndDelete(id);
+    // Log activity
+    await createLog({
+      action: "deleted",
+      entityType: "Candidate",
+      entityId: candidate._id,
+      entityName: candidate.name,
+      description: `Candidate ${candidate.name} has been deleted by ${
+        req.user?.username || "System"
+      }`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     res.status(200).json({ message: "Candidate deleted" });
   } catch (err) {
     console.error("deleteCandidate error", err);

@@ -637,6 +637,19 @@ const updateUser = async (req, res) => {
     if (contactNo !== undefined) user.contactNo = contactNo;
     if (cnic !== undefined) user.cnic = cnic;
     await user.save();
+    // Log activity
+    await createLog({
+      action: "updated",
+      entityType: "User",
+      entityId: user._id,
+      entityName: user.username,
+      description: `User ${user.username} has been updated by ${
+        req.user?.username || "System"
+      }`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     const safe = await User.findById(user._id)
       .select("-password -otp -otpExpires")
       .populate("roleId");
@@ -659,6 +672,19 @@ const deleteUser = async (req, res) => {
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ message: "User not found" });
     await User.findByIdAndDelete(id);
+    // Log activity
+    await createLog({
+      action: "deleted",
+      entityType: "User",
+      entityId: user._id,
+      entityName: user.username,
+      description: `The User ${user.username} has been deleted by ${
+        req.user?.username || "System"
+      }`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     res.status(200).json({ message: "User deleted" });
   } catch (error) {
     console.error("deleteUser error:", error);

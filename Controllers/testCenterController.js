@@ -1,4 +1,5 @@
 const TestCenter = require("../models/testCenterModel");
+const { createLog } = require("./activityLogController");
 
 // Create test center
 const createTestCenter = async (req, res) => {
@@ -14,7 +15,19 @@ const createTestCenter = async (req, res) => {
       address,
       createdBy: req.user._id,
     });
-
+    // Log activity
+    await createLog({
+      action: "created",
+      entityType: "TestCenter",
+      entityId: testCenter._id,
+      entityName: testCenter.name || testCenter._id,
+      description: `New test center ${
+        testCenter.name || testCenter._id
+      } has been created by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.status(201).json({
       message: "Test Center created successfully",
       testCenter,
@@ -60,6 +73,19 @@ const updateTestCenter = async (req, res) => {
       return res.status(404).json({ message: "Test Center not found" });
     }
 
+    // Log activity
+    await createLog({
+      action: "updated",
+      entityType: "TestCenter",
+      entityId: updatedTestCenter._id,
+      entityName: updatedTestCenter.name || updatedTestCenter._id,
+      description: `Test Center ${
+        updatedTestCenter.name || updatedTestCenter._id
+      } has been updated by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({
       message: "Test Center updated successfully",
       testCenter: updatedTestCenter,
@@ -85,7 +111,20 @@ const deleteTestCenter = async (req, res) => {
       return res.status(404).json({ message: "Test Center not found" });
     }
 
-    await TestCenter.findByIdAndDelete(id);
+    const deleted = await TestCenter.findByIdAndDelete(id);
+    // Log activity
+    await createLog({
+      action: "deleted",
+      entityType: "TestCenter",
+      entityId: deleted?._id,
+      entityName: deleted?.name || deleted?._id,
+      description: `The Test Center ${
+        deleted?.name || deleted?._id
+      } has been deleted by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({ message: "Test Center deleted successfully" });
   } catch (err) {
     console.error(err);

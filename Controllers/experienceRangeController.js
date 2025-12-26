@@ -1,4 +1,5 @@
 const ExperienceRange = require("../models/experienceRangeModel");
+const { createLog } = require("./activityLogController");
 
 const createExperienceRange = async (req, res) => {
   try {
@@ -20,6 +21,19 @@ const createExperienceRange = async (req, res) => {
     });
 
     await newExperienceRange.save();
+    // Log activity
+    await createLog({
+      action: "created",
+      entityType: "ExperienceRange",
+      entityId: newExperienceRange._id,
+      entityName: newExperienceRange.experienceRange || newExperienceRange._id,
+      description: `New experience range ${
+        newExperienceRange.experienceRange || newExperienceRange._id
+      } has been created by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?.id,
+      meta: {},
+    });
     res.status(201).json({
       message: "Experience Range created successfully",
       experienceRange: newExperienceRange,
@@ -65,6 +79,20 @@ const updateExperienceRange = async (req, res) => {
       return res.status(404).json({ message: "Experience Range not found" });
     }
 
+    // Log activity
+    await createLog({
+      action: "updated",
+      entityType: "ExperienceRange",
+      entityId: updatedExperienceRange._id,
+      entityName:
+        updatedExperienceRange.experienceRange || updatedExperienceRange._id,
+      description: `Experience Range ${
+        updatedExperienceRange.experienceRange || updatedExperienceRange._id
+      } has been updated by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?.id,
+      meta: {},
+    });
     res.status(200).json({
       message: "Experience Range updated successfully",
       experienceRange: updatedExperienceRange,
@@ -105,7 +133,20 @@ const deleteExperienceRange = async (req, res) => {
     if (!deletedExperienceRange) {
       return res.status(404).json({ message: "Experience Range not found" });
     }
-
+    // Log activity
+    await createLog({
+      action: "deleted",
+      entityType: "ExperienceRange",
+      entityId: deletedExperienceRange._id,
+      entityName:
+        deletedExperienceRange.experienceRange || deletedExperienceRange._id,
+      description: `The Experience Range ${
+        deletedExperienceRange.experienceRange || deletedExperienceRange._id
+      } has been deleted by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?.id,
+      meta: {},
+    });
     res.status(200).json({ message: "Experience Range deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });

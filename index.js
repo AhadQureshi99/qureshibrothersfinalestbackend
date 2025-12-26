@@ -72,6 +72,7 @@ app.use(
 );
 
 app.use("/api/users/", require("./routes/userRoutes"));
+app.use("/api/activity-logs/", require("./routes/activityLogRoutes"));
 app.use("/api/expenses/", require("./routes/expenseRoutes"));
 app.use("/api/candidates/", require("./routes/candidateRoutes"));
 app.use("/api/config/", require("./routes/configRoutes"));

@@ -1,4 +1,5 @@
 const Airline = require("../models/airlineModel");
+const { createLog } = require("./activityLogController");
 
 // Create airline
 const createAirline = async (req, res) => {
@@ -10,7 +11,19 @@ const createAirline = async (req, res) => {
       description,
       createdBy: req.user._id,
     });
-
+    // Log activity
+    await createLog({
+      action: "created",
+      entityType: "Airline",
+      entityId: airline._id,
+      entityName: airline.name || airline._id,
+      description: `New airline ${
+        airline.name || airline._id
+      } has been created by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.status(201).json({
       message: "Airline created successfully",
       airline,
@@ -53,6 +66,19 @@ const updateAirline = async (req, res) => {
       return res.status(404).json({ message: "Airline not found" });
     }
 
+    // Log activity
+    await createLog({
+      action: "updated",
+      entityType: "Airline",
+      entityId: updatedAirline._id,
+      entityName: updatedAirline.name || updatedAirline._id,
+      description: `Airline ${
+        updatedAirline.name || updatedAirline._id
+      } has been updated by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({
       message: "Airline updated successfully",
       airline: updatedAirline,
@@ -76,7 +102,20 @@ const deleteAirline = async (req, res) => {
       return res.status(404).json({ message: "Airline not found" });
     }
 
-    await Airline.findByIdAndDelete(id);
+    const deleted = await Airline.findByIdAndDelete(id);
+    // Log activity
+    await createLog({
+      action: "deleted",
+      entityType: "Airline",
+      entityId: deleted?._id,
+      entityName: deleted?.name || deleted?._id,
+      description: `The Airline ${
+        deleted?.name || deleted?._id
+      } has been deleted by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({ message: "Airline deleted successfully" });
   } catch (err) {
     console.error(err);

@@ -1,4 +1,5 @@
 const Skill = require("../models/skillModel");
+const { createLog } = require("./activityLogController");
 const asyncHandler = require("express-async-handler");
 
 // Get all skills
@@ -31,7 +32,19 @@ const createSkill = asyncHandler(async (req, res) => {
     name,
     createdBy: req.user._id,
   });
-
+  // Log activity
+  await createLog({
+    action: "created",
+    entityType: "Skill",
+    entityId: skill._id,
+    entityName: skill.name,
+    description: `New skill ${skill.name} has been created by ${
+      req.user?.username || "System"
+    }`,
+    performedBy: req.user?.username || "System",
+    performedById: req.user?._id,
+    meta: {},
+  });
   res.status(201).json({
     message: "Skill created successfully",
     skill,
@@ -65,6 +78,19 @@ const updateSkill = asyncHandler(async (req, res) => {
     throw new Error("Skill not found");
   }
 
+  // Log activity
+  await createLog({
+    action: "updated",
+    entityType: "Skill",
+    entityId: skill._id,
+    entityName: skill.name,
+    description: `Skill ${skill.name} has been updated by ${
+      req.user?.username || "System"
+    }`,
+    performedBy: req.user?.username || "System",
+    performedById: req.user?._id,
+    meta: {},
+  });
   res.json({
     message: "Skill updated successfully",
     skill,
@@ -82,6 +108,19 @@ const deleteSkill = asyncHandler(async (req, res) => {
     throw new Error("Skill not found");
   }
 
+  // Log activity
+  await createLog({
+    action: "deleted",
+    entityType: "Skill",
+    entityId: skill._id,
+    entityName: skill.name,
+    description: `The Skill ${skill.name} has been deleted by ${
+      req.user?.username || "System"
+    }`,
+    performedBy: req.user?.username || "System",
+    performedById: req.user?._id,
+    meta: {},
+  });
   res.json({
     message: "Skill deleted successfully",
   });

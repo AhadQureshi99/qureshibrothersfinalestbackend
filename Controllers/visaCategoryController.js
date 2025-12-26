@@ -1,6 +1,7 @@
 const VisaCategory = require("../models/visaCategoryModel");
 
 // Create visa category
+const { createLog } = require("./activityLogController");
 const createVisaCategory = async (req, res) => {
   try {
     const { name, description } = req.body;
@@ -10,7 +11,19 @@ const createVisaCategory = async (req, res) => {
       description,
       createdBy: req.user._id,
     });
-
+    // Log activity
+    await createLog({
+      action: "created",
+      entityType: "VisaCategory",
+      entityId: visaCategory._id,
+      entityName: visaCategory.name || visaCategory._id,
+      description: `New visa category ${
+        visaCategory.name || visaCategory._id
+      } has been created by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.status(201).json({
       message: "Visa Category created successfully",
       visaCategory,
@@ -55,6 +68,19 @@ const updateVisaCategory = async (req, res) => {
       return res.status(404).json({ message: "Visa Category not found" });
     }
 
+    // Log activity
+    await createLog({
+      action: "updated",
+      entityType: "VisaCategory",
+      entityId: updatedCategory._id,
+      entityName: updatedCategory.name || updatedCategory._id,
+      description: `Visa Category ${
+        updatedCategory.name || updatedCategory._id
+      } has been updated by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({
       message: "Visa Category updated successfully",
       visaCategory: updatedCategory,
@@ -80,7 +106,20 @@ const deleteVisaCategory = async (req, res) => {
       return res.status(404).json({ message: "Visa Category not found" });
     }
 
-    await VisaCategory.findByIdAndDelete(id);
+    const deleted = await VisaCategory.findByIdAndDelete(id);
+    // Log activity
+    await createLog({
+      action: "deleted",
+      entityType: "VisaCategory",
+      entityId: deleted?._id,
+      entityName: deleted?.name || deleted?._id,
+      description: `The Visa Category ${
+        deleted?.name || deleted?._id
+      } has been deleted by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({ message: "Visa Category deleted successfully" });
   } catch (err) {
     console.error(err);

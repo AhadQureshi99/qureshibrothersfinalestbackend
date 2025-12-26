@@ -1,4 +1,5 @@
 const JobCategory = require("../models/jobCategoryModel");
+const { createLog } = require("./activityLogController");
 
 // Create job category
 const createJobCategory = async (req, res) => {
@@ -10,7 +11,19 @@ const createJobCategory = async (req, res) => {
       description,
       createdBy: req.user._id,
     });
-
+    // Log activity
+    await createLog({
+      action: "created",
+      entityType: "JobCategory",
+      entityId: jobCategory._id,
+      entityName: jobCategory.name || jobCategory._id,
+      description: `New job category ${
+        jobCategory.name || jobCategory._id
+      } has been created by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.status(201).json({
       message: "Job Category created successfully",
       jobCategory,
@@ -55,6 +68,19 @@ const updateJobCategory = async (req, res) => {
       return res.status(404).json({ message: "Job Category not found" });
     }
 
+    // Log activity
+    await createLog({
+      action: "updated",
+      entityType: "JobCategory",
+      entityId: updatedCategory._id,
+      entityName: updatedCategory.name || updatedCategory._id,
+      description: `Job Category ${
+        updatedCategory.name || updatedCategory._id
+      } has been updated by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({
       message: "Job Category updated successfully",
       jobCategory: updatedCategory,
@@ -80,7 +106,20 @@ const deleteJobCategory = async (req, res) => {
       return res.status(404).json({ message: "Job Category not found" });
     }
 
-    await JobCategory.findByIdAndDelete(id);
+    const deleted = await JobCategory.findByIdAndDelete(id);
+    // Log activity
+    await createLog({
+      action: "deleted",
+      entityType: "JobCategory",
+      entityId: deleted?._id,
+      entityName: deleted?.name || deleted?._id,
+      description: `The Job Category ${
+        deleted?.name || deleted?._id
+      } has been deleted by ${req.user?.username || "System"}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: {},
+    });
     return res.json({ message: "Job Category deleted successfully" });
   } catch (err) {
     console.error(err);
