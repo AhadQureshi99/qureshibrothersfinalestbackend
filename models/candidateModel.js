@@ -46,6 +46,12 @@ const candidateSchema = new mongoose.Schema(
     visaNo: { type: String },
     eNo: { type: String },
     experience: { type: String },
+    // Interview Schedule fields
+    interviewDate: { type: Date },
+    interviewTime: { type: String },
+    interviewLocation: { type: String },
+    interviewNotes: { type: String },
+    interviewStatus: { type: String }, // e.g., "Scheduled", "Completed", "Passed", "Failed"
   },
   { timestamps: true }
 );
