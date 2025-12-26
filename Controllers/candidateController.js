@@ -102,8 +102,15 @@ const createCandidate = async (req, res) => {
         "Unknown";
       performedById = req.user._id;
     }
-    // Try to get the candidate name from the saved candidate (fallback to body.name)
-    const candidateName = candidate.name || body.name || "(no name)";
+    // Try to get the candidate name from the saved candidate or common fields
+    let candidateName =
+      candidate.name || body.name || body.fullName || body.candidateName;
+    if (!candidateName && body.firstName && body.lastName) {
+      candidateName = `${body.firstName} ${body.lastName}`;
+    }
+    if (!candidateName) {
+      candidateName = "(no name)";
+    }
     await createLog({
       action: "created",
       entityType: "Candidate",
