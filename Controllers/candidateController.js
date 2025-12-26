@@ -91,16 +91,27 @@ const createCandidate = async (req, res) => {
 
     await candidate.save();
     // Log activity
+    // Try to get the user who created the candidate
+    let performedBy = "System";
+    let performedById = undefined;
+    if (req.user) {
+      performedBy =
+        req.user.username ||
+        req.user.email ||
+        req.user._id?.toString() ||
+        "Unknown";
+      performedById = req.user._id;
+    }
+    // Try to get the candidate name from the saved candidate (fallback to body.name)
+    const candidateName = candidate.name || body.name || "(no name)";
     await createLog({
       action: "created",
       entityType: "Candidate",
       entityId: candidate._id,
-      entityName: candidate.name,
-      description: `New candidate ${candidate.name} has been created by ${
-        req.user?.username || "System"
-      }`,
-      performedBy: req.user?.username || "System",
-      performedById: req.user?._id,
+      entityName: candidateName,
+      description: `New candidate ${candidateName} has been created by ${performedBy}`,
+      performedBy,
+      performedById,
       meta: {},
     });
     res.status(201).json({ message: "Candidate created", candidate });
