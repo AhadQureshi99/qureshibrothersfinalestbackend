@@ -18,7 +18,8 @@ const multerFields = upload.fields([
 
 router.get("/", getCandidates);
 router.get("/:id", getCandidateById);
-router.post("/", multerFields, createCandidate);
+const verifyJWT = require("../middelwares/authMiddleware");
+router.post("/", verifyJWT, multerFields, createCandidate);
 router.put("/:id", updateCandidate);
 router.patch("/:id", updateCandidate);
 router.delete("/:id", deleteCandidate);
