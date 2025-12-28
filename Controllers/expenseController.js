@@ -20,10 +20,11 @@ const createExpense = async (req, res) => {
       expenseName,
       amount: Number(amount),
       remarks,
-      createdBy: req.user._id,
+      createdBy: req.user?._id || null,
     });
-    // Log activity
-    await createLog({
+
+    // Log activity (don't await to avoid blocking)
+    createLog({
       action: "created",
       entityType: "Expense",
       entityId: expense._id,
@@ -32,9 +33,10 @@ const createExpense = async (req, res) => {
         req.user?.username || "System"
       }`,
       performedBy: req.user?.username || "System",
-      performedById: req.user?._id,
+      performedById: req.user?._id || null,
       meta: { amount: expense.amount },
-    });
+    }).catch((err) => console.error("Activity log error:", err));
+
     return res.status(201).json({ message: "Expense created", expense });
   } catch (err) {
     console.error("Error in createExpense:", err);
@@ -160,8 +162,9 @@ const updateExpense = async (req, res) => {
       req.body,
       { new: true }
     );
-    // Log activity
-    await createLog({
+
+    // Log activity (don't await to avoid blocking)
+    createLog({
       action: "updated",
       entityType: "Expense",
       entityId: updated?._id,
@@ -170,9 +173,10 @@ const updateExpense = async (req, res) => {
         req.user?.username || "System"
       }`,
       performedBy: req.user?.username || "System",
-      performedById: req.user?._id,
+      performedById: req.user?._id || null,
       meta: { amount: updated?.amount },
-    });
+    }).catch((err) => console.error("Activity log error:", err));
+
     return res.json({ message: "Expense updated", expense: updated });
   } catch (err) {
     console.error(err);
@@ -185,8 +189,9 @@ const deleteExpense = async (req, res) => {
     if (req.user.role !== "superadmin")
       return res.status(403).json({ message: "Forbidden" });
     const deleted = await Expense.findByIdAndDelete(req.params.expenseId);
-    // Log activity
-    await createLog({
+
+    // Log activity (don't await to avoid blocking)
+    createLog({
       action: "deleted",
       entityType: "Expense",
       entityId: deleted?._id,
@@ -195,9 +200,10 @@ const deleteExpense = async (req, res) => {
         req.user?.username || "System"
       }`,
       performedBy: req.user?.username || "System",
-      performedById: req.user?._id,
+      performedById: req.user?._id || null,
       meta: { amount: deleted?.amount },
-    });
+    }).catch((err) => console.error("Activity log error:", err));
+
     return res.json({ message: "Expense deleted" });
   } catch (err) {
     console.error(err);
