@@ -6,6 +6,14 @@ const ExpenseRequest = require("../models/expenseRequestModel");
 const createExpense = async (req, res) => {
   try {
     const { date, type, expenseName, amount, remarks } = req.body;
+
+    // Validate required fields
+    if (!expenseName || !amount) {
+      return res
+        .status(400)
+        .json({ message: "Expense name and amount are required" });
+    }
+
     const expense = await Expense.create({
       date: date || new Date(),
       type: type || "other",
@@ -29,8 +37,10 @@ const createExpense = async (req, res) => {
     });
     return res.status(201).json({ message: "Expense created", expense });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Server error" });
+    console.error("Error in createExpense:", err);
+    return res
+      .status(500)
+      .json({ message: "Server error", error: err.message });
   }
 };
 
@@ -39,11 +49,18 @@ const listExpenses = async (req, res) => {
   try {
     const expenses = await Expense.find()
       .sort({ createdAt: -1 })
-      .populate("createdBy", "username email role");
+      .populate({
+        path: "createdBy",
+        select: "username email role",
+        options: { strictPopulate: false },
+      })
+      .lean();
     return res.json({ expenses });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Server error" });
+    console.error("Error in listExpenses:", err);
+    return res
+      .status(500)
+      .json({ message: "Server error", error: err.message });
   }
 };
 

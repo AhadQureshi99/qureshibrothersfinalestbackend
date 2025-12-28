@@ -11,7 +11,11 @@ const expenseSchema = new mongoose.Schema(
     expenseName: { type: String, required: true },
     amount: { type: Number, required: true },
     remarks: { type: String },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
   },
   { timestamps: true }
 );
