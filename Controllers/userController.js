@@ -1,4 +1,5 @@
 const User = require("../models/userModel");
+const { createLog } = require("./activityLogController");
 const nodemailer = require("nodemailer");
 const multer = require("multer");
 const path = require("path");
