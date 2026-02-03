@@ -12,6 +12,7 @@ require("colors");
 const corsOptions = {
   origin: [
     "http://localhost:5173",
+    "http://localhost:5174",
     "https://qureshi-brothers-dashboard.netlify.app",
     "https://qureshi-brothers-frontend-ujhe.vercel.app",
     "https://api.cloudandroots.com",
