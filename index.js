@@ -13,6 +13,7 @@ const corsOptions = {
   origin: [
     "http://localhost:5173",
     "http://localhost:5174",
+    "http://localhost:5175",
     "https://qureshi-brothers-dashboard.netlify.app",
     "https://qureshi-brothers-frontend-ujhe.vercel.app",
     "https://api.cloudandroots.com",
@@ -21,6 +22,7 @@ const corsOptions = {
     "https://qureshi-brothers-frontend-8b3q3gm2c-ahad-qureshis-projects.vercel.app",
     "https://qureshi-brothers-frontend-ujhe-5qtha3i9u-ahad-qureshis-projects.vercel.app",
     "https://qureshi-brothers-frontend.vercel.app",
+    "https://quershi-brother-frountend.vercel.app",
   ],
   credentials: true,
 };
@@ -166,7 +168,7 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3001;
 const server = app.listen(PORT, () =>
-  console.log(`Server started on port: ${PORT}`)
+  console.log(`Server started on port: ${PORT.yellow}`)
 );
 
 server.on("error", (err) => {

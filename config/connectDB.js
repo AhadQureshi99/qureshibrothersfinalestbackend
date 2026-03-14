@@ -9,7 +9,7 @@ const connectDB = async () => {
     process.exit(1);
   }
   await mongoose.connect(mongoUrl);
-  console.log(`Database connected on host: ${mongoose.connection.host}`);
+  console.log(`Database connected on host: ${mongoose.connection.host.cyan}`);
 };
 
 module.exports = connectDB;

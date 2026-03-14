@@ -27,19 +27,84 @@ const createCandidate = async (req, res) => {
     // fields come from form data
     const body = req.body || {};
 
+    // Create candidate with ALL available fields from body
     const candidate = new Candidate({
+      // Basic Info Fields
       date: body.date,
       name: body.name,
+      username: body.username,
+      password: body.password,
+      candidateType: body.candidateType,
+      title: body.title,
+      firstName: body.firstName,
+      lastName: body.lastName,
+      cnic: body.cnic,
       fatherName: body.fatherName,
+      gender: body.gender,
       dateOfBirth: body.dateOfBirth,
       age: body.age,
       placeOfBirth: body.placeOfBirth,
-      email: body.email,
-      contact: body.mobile,
-      passportIssueDate: body.passportIssueDate,
-      passport: body.passport,
-      passportExpiryDate: body.passportExpiryDate,
+      nationality: body.nationality,
       maritalStatus: body.maritalStatus,
+      education: body.education,
+      profession: body.profession,
+      experience: body.experience,
+      jobType: body.jobType,
+      jobAppliedFor: body.jobAppliedFor,
+      plan: body.plan,
+      religion: body.religion,
+      wages: body.wages,
+      address: body.address,
+
+      // Passport Info Fields
+      passportNumber: body.passportNumber,
+      passportIssueDate: body.passportIssueDate,
+      passportExpiryDate: body.passportExpiryDate,
+      passportIssuePlace: body.passportIssuePlace,
+
+      // Residence Info Fields
+      country: body.country,
+      state: body.state,
+      province: body.province,
+      zip: body.zip,
+      district: body.district,
+      city: body.city,
+      street: body.street,
+
+      // Contact Details Fields
+      phone: body.phone,
+      mobile: body.mobile,
+      email: body.email,
+      fax: body.fax,
+      website: body.website,
+      contactAddress: body.contactAddress,
+      returnAddress: body.returnAddress,
+      emergencyContact: body.emergencyContact,
+      emergencyContactRelation: body.emergencyContactRelation,
+
+      // Skills Array
+      skills: body.skills || [],
+
+      // Present Status Fields
+      currentStatus: body.currentStatus,
+      statusDate: body.statusDate,
+      convicted: body.convicted,
+      politicalAffiliation: body.politicalAffiliation,
+      presentEmployment: body.presentEmployment,
+      achievements: body.achievements,
+
+      // Dependents Array
+      dependents: body.dependents || [],
+
+      // Resumes Array
+      resumes: body.resumes || [],
+
+      // Legacy fields for backward compatibility
+      contact: body.contact || body.mobile,
+      passport: body.passport || body.passportNumber,
+      ppIssue: body.ppIssue || body.passportIssueDate,
+      ppExpiry: body.ppExpiry || body.passportExpiryDate,
+      salary: body.salary || body.wages,
       companyNameEnglish: body.companyNameEnglish,
       companyNameArabic: body.companyNameArabic,
       tradeEnglish: body.tradeEnglish,
@@ -47,10 +112,8 @@ const createCandidate = async (req, res) => {
       visaId: body.visaId,
       visaNo: body.visaNo,
       eNo: body.eNo,
-      salary: body.salary,
-      profession: body.profession,
-      address: body.address,
-      experience: body.experience,
+
+      // Status
       status: body.status || "Initial Registration",
     });
 
@@ -157,7 +220,15 @@ const getCandidateById = async (req, res) => {
 const updateCandidate = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    let updateData = req.body;
+
+    // If multipart/form-data, status may be a string, so ensure it's set
+    if (req.body.status) {
+      updateData.status = req.body.status;
+    }
+
+    // If files are uploaded, handle them here (optional, for future)
+    // Example: handle profilePicture or documents
 
     const candidate = await Candidate.findByIdAndUpdate(id, updateData, {
       new: true,
@@ -203,7 +274,7 @@ const uploadProfilePicture = async (req, res) => {
     const candidate = await Candidate.findByIdAndUpdate(
       id,
       { profilePicture: url },
-      { new: true }
+      { new: true },
     );
 
     if (!candidate)
@@ -250,7 +321,7 @@ const deleteCandidate = async (req, res) => {
       console.warn(
         "Failed to remove uploaded files for candidate",
         id,
-        fileErr
+        fileErr,
       );
     }
 
