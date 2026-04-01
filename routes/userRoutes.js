@@ -17,6 +17,7 @@ const {
   deleteUser,
   toggleUserStatus,
   getUserLogs,
+  getUserById,
 } = require("../Controllers/userController");
 const verifyJWT = require("../middelwares/authMiddleware");
 
@@ -39,12 +40,13 @@ userRouter.post(
   verifyJWT,
   upload,
   uploadProfilePicture,
-  multerErrorHandler
+  multerErrorHandler,
 );
 
 // Superadmin routes
 userRouter.post("/create-admin", verifyJWT, createAdmin);
 userRouter.put("/users/:id/permissions", verifyJWT, updateUserPermissions);
+userRouter.get("/users/:id", verifyJWT, getUserById);
 userRouter.put("/users/:id", verifyJWT, updateUser);
 userRouter.delete("/users/:id", verifyJWT, deleteUser);
 userRouter.patch("/users/:id/status", verifyJWT, toggleUserStatus);
@@ -55,7 +57,7 @@ userRouter.get("/", verifyJWT, listAllUsers);
 userRouter.post(
   "/normalize-permissions",
   verifyJWT,
-  normalizePermissionsForAllUsers
+  normalizePermissionsForAllUsers,
 );
 
 // Get user logs report

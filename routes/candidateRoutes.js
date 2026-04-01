@@ -20,15 +20,15 @@ router.get("/", getCandidates);
 router.get("/:id", getCandidateById);
 const verifyJWT = require("../middelwares/authMiddleware");
 router.post("/", verifyJWT, multerFields, createCandidate);
-router.put("/:id", updateCandidate);
-router.patch("/:id", updateCandidate);
+router.put("/:id", multerFields, updateCandidate);
+router.patch("/:id", multerFields, updateCandidate);
 router.delete("/:id", deleteCandidate);
 
 // route to upload/update profile picture for existing candidate
 router.post(
   "/:id/profile-picture",
   upload.single("profilePicture"),
-  uploadProfilePicture
+  uploadProfilePicture,
 );
 
 module.exports = router;

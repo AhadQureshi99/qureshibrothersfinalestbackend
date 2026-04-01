@@ -28,7 +28,7 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     const filetypes = /jpeg|jpg|png/;
     const extname = filetypes.test(
-      path.extname(file.originalname).toLowerCase()
+      path.extname(file.originalname).toLowerCase(),
     );
     const mimetype = filetypes.test(file.mimetype);
     if (extname && mimetype) {
@@ -207,7 +207,7 @@ const registerUser = async (req, res) => {
     await sendVerificationEmail(email, otp);
 
     const createdUser = await User.findById(user._id).select(
-      "-password -otp -otpExpires"
+      "-password -otp -otpExpires",
     );
     res.status(200).json({
       message: "User registered, please verify OTP sent to your email",
@@ -282,7 +282,7 @@ const verifyOTP = async (req, res) => {
 
     const accessToken = user.generateAccessToken();
     const verifiedUser = await User.findById(user._id).select(
-      "-password -otp -otpExpires"
+      "-password -otp -otpExpires",
     );
 
     res.status(200).json({
@@ -338,7 +338,7 @@ const loginUser = async (req, res) => {
     console.log(`[DEBUG] Login successful for user ${email}`);
     const accessToken = user.generateAccessToken();
     const loggedInUser = await User.findById(user._id).select(
-      "-password -otp -otpExpires"
+      "-password -otp -otpExpires",
     );
 
     res.status(200).json({
@@ -452,11 +452,11 @@ const uploadProfilePicture = async (req, res) => {
     await user.save();
     console.log(
       "User updated with profile picture filename:",
-      user.profilePicture
+      user.profilePicture,
     );
 
     const updatedUser = await User.findById(user._id).select(
-      "-password -otp -otpExpires"
+      "-password -otp -otpExpires",
     );
 
     res.status(200).json({
@@ -491,11 +491,14 @@ const createAdmin = async (req, res) => {
       email,
       password,
       role,
+      roleId,
+      permissions,
       firstName,
       lastName,
       fatherName,
       contactNo,
       cnic,
+      isActive,
     } = req.body;
     if (!username || !email || !password) {
       return res
@@ -514,15 +517,18 @@ const createAdmin = async (req, res) => {
       email,
       password,
       role: role || "admin",
+      roleId: roleId || null,
+      permissions: permissions || {},
       verified: true,
       firstName,
       lastName,
       fatherName,
       contactNo,
       cnic,
+      isActive: isActive || false,
     });
     const safe = await User.findById(admin._id).select(
-      "-password -otp -otpExpires"
+      "-password -otp -otpExpires",
     );
     res.status(201).json({ message: "Admin created", user: safe });
   } catch (error) {
@@ -545,7 +551,7 @@ const updateUserPermissions = async (req, res) => {
     user.permissions = permissions || {};
     await user.save();
     const safe = await User.findById(user._id).select(
-      "-password -otp -otpExpires"
+      "-password -otp -otpExpires",
     );
     res.status(200).json({ message: "Permissions updated", user: safe });
   } catch (error) {
@@ -705,7 +711,7 @@ const toggleUserStatus = async (req, res) => {
     isActive = Boolean(isActive);
 
     console.log(
-      `[DEBUG] Toggle request received - ID: ${id}, isActive param: ${isActive}`
+      `[DEBUG] Toggle request received - ID: ${id}, isActive param: ${isActive}`,
     );
 
     if (req.user.role !== "superadmin") {
@@ -731,10 +737,10 @@ const toggleUserStatus = async (req, res) => {
 
     // Fetch fresh from DB to confirm
     const updatedUser = await User.findById(id).select(
-      "-password -otp -otpExpires"
+      "-password -otp -otpExpires",
     );
     console.log(
-      `[DEBUG] Fresh from DB: email=${updatedUser.email}, isActive=${updatedUser.isActive}`
+      `[DEBUG] Fresh from DB: email=${updatedUser.email}, isActive=${updatedUser.isActive}`,
     );
 
     res.status(200).json({
@@ -748,6 +754,26 @@ const toggleUserStatus = async (req, res) => {
 };
 
 module.exports.toggleUserStatus = toggleUserStatus;
+
+// Get single user by ID (superadmin only)
+const getUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (req.user.role !== "superadmin") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    const user = await User.findById(id).select("-password -otp -otpExpires");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("getUserById error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports.getUserById = getUserById;
 
 // Get user logs report
 const getUserLogs = async (req, res) => {
