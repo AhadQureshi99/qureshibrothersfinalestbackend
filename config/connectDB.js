@@ -4,7 +4,7 @@ const connectDB = async () => {
   const mongoUrl = process.env.MONGO_URL;
   if (!mongoUrl) {
     console.error(
-      "MONGO_URL is not set in environment variables. Cannot connect to database."
+      "MONGO_URL is not set in environment variables. Cannot connect to database.",
     );
     process.exit(1);
   }

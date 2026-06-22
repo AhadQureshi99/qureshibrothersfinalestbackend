@@ -66,7 +66,7 @@ const updateSalaryRange = async (req, res) => {
     const updatedSalaryRange = await SalaryRange.findByIdAndUpdate(
       id,
       { salaryRange },
-      { new: true }
+      { new: true },
     );
 
     if (!updatedSalaryRange) {
