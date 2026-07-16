@@ -160,6 +160,10 @@ app.use(
   require("./routes/employerManagementRoutes"),
 );
 
+app.get("/" , (req,res)=>{
+  res.send("API is running...")
+})
+
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 3001;
