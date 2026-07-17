@@ -14,11 +14,8 @@ const corsOptions = {
     "http://localhost:5173",
     "http://localhost:5174",
     "http://localhost:5175",
-    "https://qureshi-brothers-dashboard.netlify.app",
-    "https://qureshi-brothers-frontend-ujhe.vercel.app",
-    "https://api.cloudandroots.com",
-    "https://qureshi-brothers-frontend.vercel.app",
     "https://quershi-brother-frountend.vercel.app",
+    "https://api.aaaogo.com",
   ],
   credentials: true,
 };
