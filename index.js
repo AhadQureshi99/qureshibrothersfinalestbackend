@@ -130,6 +130,10 @@ app.use(
   require("./routes/accounting/accountRoutes"),
 );
 app.use(
+  "/api/accounting/chart-of-accounts/",
+  require("./routes/accounting/chartOfAccountRoutes"),
+);
+app.use(
   "/api/accounting/transactions/",
   require("./routes/accounting/transactionRoutes"),
 );
@@ -157,9 +161,9 @@ app.use(
   require("./routes/employerManagementRoutes"),
 );
 
-app.get("/" , (req,res)=>{
-  res.send("API is running...")
-})
+app.get("/", (req, res) => {
+  res.send("API is running...");
+});
 
 app.use(errorHandler);
 
