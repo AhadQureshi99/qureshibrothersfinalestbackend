@@ -2,11 +2,19 @@ const PaymentAgent = require("../models/paymentAgentModel");
 const path = require("path");
 const fs = require("fs");
 
+const nextAgentCode = async () => {
+  const agents = await PaymentAgent.find({}, "code").lean();
+  const highestNumber = agents.reduce((highest, agent) => {
+    const match = /^PAG-(\d+)$/.exec(agent.code);
+    return match ? Math.max(highest, Number(match[1])) : highest;
+  }, 0);
+  return `PAG-${String(highestNumber + 1).padStart(4, "0")}`;
+};
+
 // Create payment agent
 const createPaymentAgent = async (req, res) => {
   try {
     const {
-      code,
       name,
       location,
       cnic,
@@ -23,19 +31,19 @@ const createPaymentAgent = async (req, res) => {
       files = req.files.map((file) => file.path);
     }
 
-    const paymentAgent = await PaymentAgent.create({
-      code,
-      name,
-      location,
-      cnic,
-      passportNo,
-      primaryEmail,
-      secondaryEmail,
-      primaryPhone,
-      secondaryPhone,
-      files,
-      createdBy: req.user._id,
-    });
+    let paymentAgent;
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      try {
+        paymentAgent = await PaymentAgent.create({
+          code: await nextAgentCode(), name, location, cnic, passportNo,
+          primaryEmail, secondaryEmail, primaryPhone, secondaryPhone, files,
+          createdBy: req.user._id,
+        });
+        break;
+      } catch (error) {
+        if (error.code !== 11000 || attempt === 4) throw error;
+      }
+    }
 
     return res.status(201).json({
       message: "Payment Agent created successfully",

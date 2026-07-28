@@ -155,6 +155,7 @@ app.use(
 );
 app.use("/api/roles/", require("./routes/roleRoutes"));
 app.use("/api/employers/", require("./routes/employerRoutes"));
+app.use("/api/employees/", require("./routes/employeeRoutes"));
 app.use("/api/employer-plans/", require("./routes/employerPlanRoutes"));
 app.use(
   "/api/employer-management/",

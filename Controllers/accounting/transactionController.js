@@ -8,6 +8,11 @@ const createTransaction = async (req, res) => {
       date,
       reference,
       description,
+      expenseCategory,
+      payee,
+      paymentMethod,
+      employee,
+      paymentTo,
       amount,
       account,
       contraAccount,
@@ -17,11 +22,20 @@ const createTransaction = async (req, res) => {
       job,
     } = req.body;
 
+    const attachments = (req.files || []).map((file) =>
+      `/${file.path.replace(/\\/g, "/")}`,
+    );
     const transaction = await Transaction.create({
       transactionType,
       date: date || new Date(),
       reference,
       description,
+      expenseCategory,
+      payee,
+      paymentMethod,
+      employee,
+      paymentTo,
+      attachments,
       amount: Number(amount),
       account,
       contraAccount,
@@ -59,6 +73,7 @@ const listTransactions = async (req, res) => {
       .populate("candidate", "name")
       .populate("paymentAgent", "name")
       .populate("travelAgent", "name")
+      .populate("employee", "fullName employeeCode")
       .populate("createdBy", "username");
 
     return res.json({ transactions });
@@ -73,6 +88,7 @@ const updateTransaction = async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
+    if (req.files?.length) updateData.attachments = req.files.map((file) => `/${file.path.replace(/\\/g, "/")}`);
 
     const updatedTransaction = await Transaction.findByIdAndUpdate(
       id,

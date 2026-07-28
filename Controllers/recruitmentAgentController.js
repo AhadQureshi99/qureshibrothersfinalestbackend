@@ -2,12 +2,20 @@ const RecruitmentAgent = require("../models/recruitmentAgentModel");
 const path = require("path");
 const fs = require("fs");
 
+const nextAgentCode = async () => {
+  const agents = await RecruitmentAgent.find({}, "code").lean();
+  const highestNumber = agents.reduce((highest, agent) => {
+    const match = /^RAG-(\d+)$/.exec(agent.code);
+    return match ? Math.max(highest, Number(match[1])) : highest;
+  }, 0);
+  return `RAG-${String(highestNumber + 1).padStart(4, "0")}`;
+};
+
 // Create recruitment agent
 const { createLog } = require("./activityLogController");
 const createRecruitmentAgent = async (req, res) => {
   try {
     const {
-      code,
       name,
       location,
       cnic,
@@ -24,19 +32,19 @@ const createRecruitmentAgent = async (req, res) => {
       files = req.files.map((file) => file.path);
     }
 
-    const recruitmentAgent = await RecruitmentAgent.create({
-      code,
-      name,
-      location,
-      cnic,
-      passportNo,
-      primaryEmail,
-      secondaryEmail,
-      primaryPhone,
-      secondaryPhone,
-      files,
-      createdBy: req.user._id,
-    });
+    let recruitmentAgent;
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      try {
+        recruitmentAgent = await RecruitmentAgent.create({
+          code: await nextAgentCode(), name, location, cnic, passportNo,
+          primaryEmail, secondaryEmail, primaryPhone, secondaryPhone, files,
+          createdBy: req.user._id,
+        });
+        break;
+      } catch (error) {
+        if (error.code !== 11000 || attempt === 4) throw error;
+      }
+    }
     // Log activity
     await createLog({
       action: "created",
