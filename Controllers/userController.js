@@ -778,7 +778,7 @@ module.exports.getUserById = getUserById;
 // Get user logs report
 const getUserLogs = async (req, res) => {
   try {
-    const { from, to } = req.query;
+    const { from, to, userId, entityType } = req.query;
 
     if (!from || !to) {
       return res
@@ -790,11 +790,21 @@ const getUserLogs = async (req, res) => {
     const toDate = new Date(to);
     toDate.setHours(23, 59, 59, 999); // Include the entire toDate
 
-    const users = await User.find({
-      createdAt: { $gte: fromDate, $lte: toDate },
-    }).select("-password -otp -otpExpires");
+    if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime())) {
+      return res.status(400).json({ message: "Invalid date range" });
+    }
 
-    res.status(200).json(users);
+    const ActivityLog = require("../models/activityLogModel");
+    const filter = {
+      createdAt: { $gte: fromDate, $lte: toDate },
+      ...(userId ? { performedById: userId } : {}),
+      ...(entityType ? { entityType } : {}),
+    };
+    const logs = await ActivityLog.find(filter)
+      .sort({ createdAt: -1 })
+      .populate("performedById", "username email role");
+
+    res.status(200).json({ logs });
   } catch (error) {
     console.error("getUserLogs error:", error);
     res.status(500).json({ message: error.message });

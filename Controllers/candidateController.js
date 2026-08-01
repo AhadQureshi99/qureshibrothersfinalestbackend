@@ -3,6 +3,85 @@ const { createLog } = require("./activityLogController");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const nodemailer = require("nodemailer");
+
+// Configure nodemailer transporter (same Gmail setup as userController)
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+// Send interview schedule notification email to candidate
+const sendInterviewNotificationEmail = async (candidate) => {
+  if (!candidate || !candidate.email) return;
+
+  const interviewDate = candidate.interviewDate
+    ? new Date(candidate.interviewDate).toLocaleDateString("en-GB", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "Not specified";
+  const interviewTime = candidate.interviewTime || "Not specified";
+  const interviewLocation = candidate.interviewLocation || "Not specified";
+  const interviewNotes = candidate.interviewNotes || "—";
+  const candidateName =
+    candidate.name ||
+    [candidate.firstName, candidate.lastName].filter(Boolean).join(" ") ||
+    "Candidate";
+
+  await transporter.sendMail({
+    from: `"QureshiBrothers" <${process.env.EMAIL_USER}>`,
+    to: candidate.email,
+    subject: "Interview Scheduled - QureshiBrothers",
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+          .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; padding: 0; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); overflow: hidden; }
+          .header { background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%); color: #ffffff; padding: 24px; text-align: center; }
+          .header h1 { margin: 0; font-size: 24px; }
+          .content { padding: 24px; line-height: 1.6; color: #333333; }
+          .details { background-color: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 20px 0; }
+          .details p { margin: 8px 0; }
+          .label { font-weight: bold; color: #2e7d32; }
+          .footer { text-align: center; padding: 16px; color: #666666; font-size: 12px; border-top: 1px solid #e0e0e0; background-color: #fafafa; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Interview Scheduled</h1>
+            <p style="margin: 8px 0 0; font-size: 14px;">QureshiBrothers</p>
+          </div>
+          <div class="content">
+            <p>Dear <strong>${candidateName}</strong>,</p>
+            <p>Congratulations! Your interview has been scheduled. Please find the details below:</p>
+            <div class="details">
+              <p><span class="label">Date:</span> ${interviewDate}</p>
+              <p><span class="label">Time:</span> ${interviewTime}</p>
+              <p><span class="label">Location:</span> ${interviewLocation}</p>
+              <p><span class="label">Notes:</span> ${interviewNotes}</p>
+            </div>
+            <p>Please arrive 15 minutes early and bring your original CNIC and any relevant documents.</p>
+            <p>If you have any questions, please contact our support team.</p>
+            <p>Best regards,<br/>QureshiBrothers Team</p>
+          </div>
+          <div class="footer">
+            <p>&copy; ${new Date().getFullYear()} QureshiBrothers. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+  });
+};
 
 // Ensure Uploads directory exists for candidates
 const uploadDir = path.join(__dirname, "../Uploads/candidates");
@@ -20,6 +99,15 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+
+const parseJsonField = (value, fallback = []) => {
+  if (typeof value !== "string") return value || fallback;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+};
 
 // Handler: create candidate with files
 const createCandidate = async (req, res) => {
@@ -83,7 +171,7 @@ const createCandidate = async (req, res) => {
       emergencyContactRelation: body.emergencyContactRelation,
 
       // Skills Array
-      skills: body.skills || [],
+      skills: parseJsonField(body.skills),
 
       // Present Status Fields
       currentStatus: body.currentStatus,
@@ -94,10 +182,10 @@ const createCandidate = async (req, res) => {
       achievements: body.achievements,
 
       // Dependents Array
-      dependents: body.dependents || [],
+      dependents: parseJsonField(body.dependents),
 
       // Resumes Array
-      resumes: body.resumes || [],
+      resumes: parseJsonField(body.resumes),
 
       // Legacy fields for backward compatibility
       contact: body.contact || body.mobile,
@@ -150,6 +238,10 @@ const createCandidate = async (req, res) => {
           passed: typeof m.passed === "boolean" ? m.passed : false,
         };
       });
+      candidate.resumes = req.files["documents"].map((f) => ({
+        filename: f.originalname,
+        url: baseUrl + "/Uploads/candidates/" + f.filename,
+      }));
     }
 
     await candidate.save();
@@ -220,7 +312,37 @@ const getCandidateById = async (req, res) => {
 const updateCandidate = async (req, res) => {
   try {
     const { id } = req.params;
-    let updateData = req.body;
+    let updateData = {
+      ...req.body,
+      ...(req.body.skills !== undefined
+        ? { skills: parseJsonField(req.body.skills) }
+        : {}),
+      ...(req.body.dependents !== undefined
+        ? { dependents: parseJsonField(req.body.dependents) }
+        : {}),
+      ...(req.body.educations !== undefined
+        ? { educations: parseJsonField(req.body.educations) }
+        : {}),
+      ...(req.body.resumes !== undefined
+        ? { resumes: parseJsonField(req.body.resumes) }
+        : {}),
+    };
+
+    const baseUrl =
+      process.env.API_URL || `http://localhost:${process.env.PORT || 3001}`;
+    if (req.files?.profilePicture?.[0]) {
+      updateData.profilePicture =
+        baseUrl + "/Uploads/candidates/" + req.files.profilePicture[0].filename;
+    }
+    if (req.files?.documents?.length) {
+      const uploadedResumes = req.files.documents.map((file) => ({
+        filename: file.originalname,
+        url: baseUrl + "/Uploads/candidates/" + file.filename,
+      }));
+      updateData.resumes = [...(updateData.resumes || []), ...uploadedResumes];
+    }
+    const previousCandidate =
+      await Candidate.findById(id).select("name status");
 
     // If multipart/form-data, status may be a string, so ensure it's set
     if (req.body.status) {
@@ -239,22 +361,51 @@ const updateCandidate = async (req, res) => {
       return res.status(404).json({ message: "Candidate not found" });
     }
 
-    // Log activity
+    // If interview date and time are being set/scheduled, send email notification
+    const isSchedulingInterview =
+      updateData.interviewDate || updateData.interviewTime;
+    let emailStatus = "not_required";
+    if (isSchedulingInterview) {
+      try {
+        await sendInterviewNotificationEmail(candidate);
+        emailStatus = "sent";
+      } catch (emailErr) {
+        // Never break the interview save if email fails
+        emailStatus = "failed";
+        console.warn(
+          "Failed to send interview notification email:",
+          emailErr.message,
+        );
+      }
+    }
+
+    const statusChanged =
+      updateData.status && updateData.status !== previousCandidate?.status;
+    const action = statusChanged ? "status changed" : "updated";
     await createLog({
-      action: "updated",
+      action,
       entityType: "Candidate",
       entityId: candidate._id,
       entityName: candidate.name,
-      description: `Candidate ${candidate.name} has been updated by ${
-        req.user?.username || "System"
-      }`,
+      description: statusChanged
+        ? `Candidate ${candidate.name} moved from ${previousCandidate.status || "new"} to ${candidate.status} by ${req.user?.username || "System"}`
+        : `Candidate ${candidate.name} has been updated by ${req.user?.username || "System"}`,
       performedBy: req.user?.username || "System",
       performedById: req.user?._id,
-      meta: {},
+      meta: statusChanged
+        ? {
+            previousStatus: previousCandidate.status,
+            newStatus: candidate.status,
+          }
+        : {},
     });
     res
       .status(200)
-      .json({ message: "Candidate updated successfully", candidate });
+      .json({
+        message: "Candidate updated successfully",
+        candidate,
+        emailStatus,
+      });
   } catch (err) {
     console.error("updateCandidate error", err);
     res.status(500).json({ message: err.message });

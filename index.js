@@ -3,6 +3,7 @@ const errorHandler = require("./middelwares/errorMiddleware");
 const connectDB = require("./config/connectDB");
 const cors = require("cors");
 const path = require("path");
+const activityAudit = require("./middelwares/activityAuditMiddleware");
 
 const app = express();
 
@@ -69,9 +70,10 @@ app.use(
 
 app.use("/api/users/", require("./routes/userRoutes"));
 app.use("/api/activity-logs/", require("./routes/activityLogRoutes"));
+app.use("/api/reference/countries/", require("./routes/countryReferenceRoutes"));
 app.use("/api/expenses/", require("./routes/expenseRoutes"));
 app.use("/api/candidates/", require("./routes/candidateRoutes"));
-app.use("/api/config/", require("./routes/configRoutes"));
+app.use("/api/config/", activityAudit("Configuration"), require("./routes/configRoutes"));
 app.use(
   "/api/config/recruitment-agents/",
   require("./routes/recruitmentAgentRoutes"),
@@ -127,18 +129,22 @@ app.use("/api/config/career-levels/", require("./routes/careerLevelRoutes"));
 app.use("/api/skills/", require("./routes/skillRoutes"));
 app.use(
   "/api/accounting/accounts/",
+  activityAudit("Finance Account"),
   require("./routes/accounting/accountRoutes"),
 );
 app.use(
   "/api/accounting/chart-of-accounts/",
+  activityAudit("Chart of Accounts"),
   require("./routes/accounting/chartOfAccountRoutes"),
 );
 app.use(
   "/api/accounting/transactions/",
+  activityAudit("Finance Transaction"),
   require("./routes/accounting/transactionRoutes"),
 );
 app.use(
   "/api/accounting/opening-balances/",
+  activityAudit("Opening Balance"),
   require("./routes/accounting/openingBalanceRoutes"),
 );
 app.use(
@@ -147,10 +153,12 @@ app.use(
 );
 app.use(
   "/api/accounting/job-payments/",
+  activityAudit("Job Payment"),
   require("./routes/accounting/jobPaymentRoutes"),
 );
 app.use(
   "/api/accounting/travel-agent-payments/",
+  activityAudit("Travel Agent Payment"),
   require("./routes/accounting/travelAgentPaymentRoutes"),
 );
 app.use("/api/roles/", require("./routes/roleRoutes"));

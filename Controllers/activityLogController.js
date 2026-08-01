@@ -31,8 +31,11 @@ exports.createLog = async ({
 // Get recent activity logs (optionally filter by entityType, limit, etc.)
 exports.getRecentLogs = async (req, res) => {
   try {
-    const { limit = 30, entityType } = req.query;
-    const filter = entityType ? { entityType } : {};
+    const { limit = 30, entityType, performedById } = req.query;
+    const filter = {
+      ...(entityType ? { entityType } : {}),
+      ...(performedById ? { performedById } : {}),
+    };
     const logs = await ActivityLog.find(filter)
       .sort({ createdAt: -1 })
       .limit(Number(limit));
