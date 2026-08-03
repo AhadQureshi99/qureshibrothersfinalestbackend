@@ -340,6 +340,27 @@ const updateCandidate = async (req, res) => {
         url: baseUrl + "/Uploads/candidates/" + file.filename,
       }));
       updateData.resumes = [...(updateData.resumes || []), ...uploadedResumes];
+
+      // Also store documents with metadata titles (if provided)
+      let docMeta = [];
+      if (req.body.documentsMeta) {
+        try {
+          docMeta = JSON.parse(req.body.documentsMeta);
+        } catch (e) {
+          docMeta = [];
+        }
+      }
+      const uploadedDocs = req.files.documents.map((file, i) => {
+        const m = docMeta[i] || {};
+        return {
+          title: m.title || file.originalname,
+          url: baseUrl + "/Uploads/candidates/" + file.filename,
+          filename: file.originalname,
+          done: typeof m.done === "boolean" ? m.done : false,
+          passed: typeof m.passed === "boolean" ? m.passed : false,
+        };
+      });
+      updateData.documents = [...(updateData.documents || []), ...uploadedDocs];
     }
     const previousCandidate =
       await Candidate.findById(id).select("name status");
