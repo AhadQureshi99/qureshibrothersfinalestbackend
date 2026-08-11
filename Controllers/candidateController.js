@@ -312,11 +312,28 @@ const updateCandidate = async (req, res) => {
   try {
     const { id } = req.params;
     const body = req.body || {};
+    console.log("UPDATE BODY KEYS", Object.keys(body));
+    console.log("UPDATE BODY FEE FIELDS", {
+      nestedTotal: body["stage2[totalFee]"],
+      nestedDeposited: body["stage2[depositedFee]"],
+      flatTotal: body.totalFee,
+      flatDeposited: body.depositedFee,
+      flatFeeDone: body.feeDone,
+    });
 
     // Helper to read bracket-nested form fields like stage2[totalFee]
     const getNested = (prefix, key) => {
       const val = body[`${prefix}[${key}]`];
       return val === undefined ? null : val;
+    };
+
+    const getField = (...keys) => {
+      for (const key of keys) {
+        if (body[key] !== undefined && body[key] !== null && body[key] !== "") {
+          return body[key];
+        }
+      }
+      return null;
     };
 
     // Build documentDetails array from stage4 document flags/dates
@@ -346,17 +363,38 @@ const updateCandidate = async (req, res) => {
         ? { resumes: parseJsonField(body.resumes) }
         : {}),
       // Document Upload stage fields
-      ...(getNested("stage2", "totalFee") !== null
-        ? { totalFee: getNested("stage2", "totalFee") }
+      ...(getField("stage2[totalFee]", "totalFee", "stage2.totalFee") !== null
+        ? {
+            totalFee: getField(
+              "stage2[totalFee]",
+              "totalFee",
+              "stage2.totalFee",
+            ),
+          }
         : {}),
-      ...(getNested("stage2", "depositedFee") !== null
-        ? { depositedFee: getNested("stage2", "depositedFee") }
+      ...(getField(
+        "stage2[depositedFee]",
+        "depositedFee",
+        "stage2.depositedFee",
+      ) !== null
+        ? {
+            depositedFee: getField(
+              "stage2[depositedFee]",
+              "depositedFee",
+              "stage2.depositedFee",
+            ),
+          }
         : {}),
-      ...(getNested("stage2", "feeDone") !== null
-        ? { feeDone: getNested("stage2", "feeDone") === "true" }
+      ...(getField("stage2[feeDone]", "feeDone", "stage2.feeDone") !== null
+        ? {
+            feeDone:
+              String(
+                getField("stage2[feeDone]", "feeDone", "stage2.feeDone"),
+              ) === "true",
+          }
         : {}),
-      ...(getNested("stage2", "feeDate") !== null
-        ? { feeDate: getNested("stage2", "feeDate") }
+      ...(getField("stage2[feeDate]", "feeDate", "stage2.feeDate") !== null
+        ? { feeDate: getField("stage2[feeDate]", "feeDate", "stage2.feeDate") }
         : {}),
       ...(getNested("stage1", "navttcAppointmentDone") !== null
         ? {
@@ -420,7 +458,8 @@ const updateCandidate = async (req, res) => {
 
     const baseUrl =
       process.env.API_URL || `http://localhost:${process.env.PORT || 3001}`;
-    const existingCandidate = await Candidate.findById(id).select("documents resumes");
+    const existingCandidate =
+      await Candidate.findById(id).select("documents resumes");
     if (!existingCandidate) {
       return res.status(404).json({ message: "Candidate not found" });
     }
