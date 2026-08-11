@@ -207,7 +207,6 @@ const createCandidate = async (req, res) => {
 
     const baseUrl =
       process.env.API_URL || `http://localhost:${process.env.PORT || 3001}`;
-
     // profilePicture: single file with field name 'profilePicture'
     if (
       req.files &&
@@ -421,6 +420,10 @@ const updateCandidate = async (req, res) => {
 
     const baseUrl =
       process.env.API_URL || `http://localhost:${process.env.PORT || 3001}`;
+    const existingCandidate = await Candidate.findById(id).select("documents resumes");
+    if (!existingCandidate) {
+      return res.status(404).json({ message: "Candidate not found" });
+    }
     if (req.files?.profilePicture?.[0]) {
       updateData.profilePicture =
         baseUrl + "/Uploads/candidates/" + req.files.profilePicture[0].filename;
@@ -430,7 +433,11 @@ const updateCandidate = async (req, res) => {
         filename: file.originalname,
         url: baseUrl + "/Uploads/candidates/" + file.filename,
       }));
-      updateData.resumes = [...(updateData.resumes || []), ...uploadedResumes];
+      updateData.resumes = [
+        ...(existingCandidate.resumes || []),
+        ...(updateData.resumes || []),
+        ...uploadedResumes,
+      ];
 
       // Also store documents with metadata titles (if provided)
       let docMeta = [];
@@ -451,7 +458,11 @@ const updateCandidate = async (req, res) => {
           passed: typeof m.passed === "boolean" ? m.passed : false,
         };
       });
-      updateData.documents = [...(updateData.documents || []), ...uploadedDocs];
+      updateData.documents = [
+        ...(existingCandidate.documents || []),
+        ...(updateData.documents || []),
+        ...uploadedDocs,
+      ];
     }
     const previousCandidate =
       await Candidate.findById(id).select("name status");
