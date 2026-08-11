@@ -7,6 +7,27 @@ const createJobCategory = async (req, res) => {
   try {
     const { name, description, companyId, jobs } = req.body;
 
+    if (!companyId) {
+      return res.status(400).json({ message: "Please select a company" });
+    }
+    if (!Array.isArray(jobs) || jobs.length === 0) {
+      return res.status(400).json({ message: "Please add at least one job" });
+    }
+
+    const normalizedJobs = jobs.map((job) => ({
+      jobTitle: String(job.jobTitle || "").trim(),
+      noOfPerson: Number(job.noOfPerson),
+      education: String(job.education || "").trim(),
+      description: String(job.description || "").trim(),
+      location: String(job.location || "").trim(),
+    }));
+    const invalidJob = normalizedJobs.find(
+      (job) => !job.jobTitle || !Number.isFinite(job.noOfPerson) || job.noOfPerson < 1,
+    );
+    if (invalidJob) {
+      return res.status(400).json({ message: "Every job needs a title and at least one person" });
+    }
+
     // Verify company exists
     const company = await Company.findById(companyId);
     if (!company) {
@@ -14,10 +35,12 @@ const createJobCategory = async (req, res) => {
     }
 
     const jobCategory = await JobCategory.create({
-      name,
+      // The current screen has no separate category-name field. Use the first
+      // job title as a meaningful fallback so old and new records save safely.
+      name: String(name || normalizedJobs[0].jobTitle).trim(),
       description,
       companyId,
-      jobs: jobs || [],
+      jobs: normalizedJobs,
       createdBy: req.user._id,
     });
     // Log activity
@@ -38,8 +61,8 @@ const createJobCategory = async (req, res) => {
       jobCategory,
     });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Server error" });
+    console.error("createJobCategory error:", err);
+    return res.status(500).json({ message: err.message || "Unable to save job category" });
   }
 };
 

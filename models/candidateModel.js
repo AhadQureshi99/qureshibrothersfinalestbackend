@@ -73,6 +73,16 @@ const candidateSchema = new mongoose.Schema(
       },
     ],
 
+    educations: [
+      {
+        from: { type: String },
+        to: { type: String },
+        degree: { type: String },
+        institute: { type: String },
+        duration: { type: String },
+      },
+    ],
+
     // Present Status Fields
     currentStatus: { type: String },
     statusDate: { type: Date },

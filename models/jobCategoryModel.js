@@ -6,6 +6,7 @@ const jobCategoryJobSchema = new mongoose.Schema(
     noOfPerson: { type: Number, required: true },
     education: { type: String },
     description: { type: String },
+    location: { type: String },
   },
   { _id: true }
 );

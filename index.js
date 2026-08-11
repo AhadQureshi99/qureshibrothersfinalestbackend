@@ -16,8 +16,10 @@ const corsOptions = {
     "http://localhost:5174",
     "http://localhost:5175",
     "https://quershi-brother-frountend.vercel.app",
+    "https://quershi-brithers-website.vercel.app",
+    process.env.PUBLIC_WEBSITE_ORIGIN,
     "https://api.aaaogo.com",
-  ],
+  ].filter(Boolean),
   credentials: true,
 };
 
@@ -30,6 +32,8 @@ connectDB();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+app.use("/api/public/", require("./routes/publicRoutes"));
 
 // Serve static files
 // Serve static files under /uploads and force inline Content-Disposition so
@@ -70,10 +74,17 @@ app.use(
 
 app.use("/api/users/", require("./routes/userRoutes"));
 app.use("/api/activity-logs/", require("./routes/activityLogRoutes"));
-app.use("/api/reference/countries/", require("./routes/countryReferenceRoutes"));
+app.use(
+  "/api/reference/countries/",
+  require("./routes/countryReferenceRoutes"),
+);
 app.use("/api/expenses/", require("./routes/expenseRoutes"));
 app.use("/api/candidates/", require("./routes/candidateRoutes"));
-app.use("/api/config/", activityAudit("Configuration"), require("./routes/configRoutes"));
+app.use(
+  "/api/config/",
+  activityAudit("Configuration"),
+  require("./routes/configRoutes"),
+);
 app.use(
   "/api/config/recruitment-agents/",
   require("./routes/recruitmentAgentRoutes"),
