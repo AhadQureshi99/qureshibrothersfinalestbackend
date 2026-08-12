@@ -18,9 +18,14 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Company routes
+// Create, list, update, delete (admin protected)
 router.post("/", verifyJWT, upload.single("logo"), ctrl.createCompany);
 router.get("/", verifyJWT, ctrl.listCompanies);
 router.put("/:id", verifyJWT, upload.single("logo"), ctrl.updateCompany);
 router.delete("/:id", verifyJWT, ctrl.deleteCompany);
+
+// Public company auth and dashboard
+router.post("/login", ctrl.loginCompany);
+router.get("/dashboard", ctrl.companyDashboard);
 
 module.exports = router;
