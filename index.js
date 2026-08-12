@@ -17,6 +17,7 @@ const corsOptions = {
     "http://localhost:5175",
     "https://quershi-brother-frountend.vercel.app",
     "https://api.codestechvista.com",
+    "https://qureshibrothers.com",
     "https://quershi-brithers-website.vercel.app",
     process.env.PUBLIC_WEBSITE_ORIGIN,
     "https://api.aaaogo.com",
