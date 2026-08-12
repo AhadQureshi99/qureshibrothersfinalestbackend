@@ -176,12 +176,14 @@ const loginCompany = async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
+      return res
+        .status(400)
+        .json({ message: "Email and password are required" });
     }
 
-    const company = await Company.findOne({ email: email.toLowerCase() }).select(
-      "+password"
-    );
+    const company = await Company.findOne({
+      email: email.toLowerCase(),
+    }).select("+password");
     if (!company) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -195,7 +197,11 @@ const loginCompany = async (req, res) => {
     const companyObj = company.toObject();
     delete companyObj.password;
 
-    return res.json({ message: "Login successful", token, company: companyObj });
+    return res.json({
+      message: "Login successful",
+      token,
+      company: companyObj,
+    });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Server error" });
@@ -210,7 +216,10 @@ const companyDashboard = async (req, res) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
     const token = authHeader.split(" ")[1];
-    const decoded = require("jsonwebtoken").verify(token, process.env.JWT_SECRET);
+    const decoded = require("jsonwebtoken").verify(
+      token,
+      process.env.JWT_SECRET,
+    );
     const company = await Company.findById(decoded.id);
     if (!company) return res.status(401).json({ message: "Unauthorized" });
 
@@ -231,7 +240,10 @@ const companyDashboard = async (req, res) => {
       jobsWithCandidates.push({ job, candidates });
     }
 
-    return res.json({ company: { _id: company._id, name: company.name, email: company.email }, jobs: jobsWithCandidates });
+    return res.json({
+      company: { _id: company._id, name: company.name, email: company.email },
+      jobs: jobsWithCandidates,
+    });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Server error" });
