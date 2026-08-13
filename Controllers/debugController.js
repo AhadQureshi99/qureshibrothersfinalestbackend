@@ -9,7 +9,9 @@ const healthCheck = async (req, res) => {
     if (debugKey) {
       const provided = req.headers["x-debug-key"] || req.query.key;
       if (!provided || provided !== debugKey) {
-        return res.status(403).json({ message: "Forbidden: invalid debug key" });
+        return res
+          .status(403)
+          .json({ message: "Forbidden: invalid debug key" });
       }
     }
 
