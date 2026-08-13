@@ -184,6 +184,9 @@ app.use(
   require("./routes/employerManagementRoutes"),
 );
 
+// Debug routes (lightweight health check for DB and candidate count)
+app.use("/api/debug/", require("./routes/debugRoutes"));
+
 app.get("/", (req, res) => {
   res.send("API is running...");
 });
