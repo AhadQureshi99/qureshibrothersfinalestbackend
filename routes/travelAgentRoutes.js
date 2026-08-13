@@ -18,9 +18,9 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Travel Agent routes
-router.post("/", verifyJWT, upload.array("files"), ctrl.createTravelAgent);
+router.post("/", verifyJWT, upload.single("logo"), ctrl.createTravelAgent);
 router.get("/", verifyJWT, ctrl.listTravelAgents);
-router.put("/:id", verifyJWT, upload.array("files"), ctrl.updateTravelAgent);
+router.put("/:id", verifyJWT, upload.single("logo"), ctrl.updateTravelAgent);
 router.delete("/:id", verifyJWT, ctrl.deleteTravelAgent);
 
 module.exports = router;

@@ -1,14 +1,22 @@
 const JobCategory = require("../models/jobCategoryModel");
 const Company = require("../models/companyModel");
+const TravelAgent = require("../models/travelAgentModel");
 const { createLog } = require("./activityLogController");
 
 // Create job category
 const createJobCategory = async (req, res) => {
   try {
-    const { name, description, companyId, jobs } = req.body;
+    const { name, description, companyId, travelAgentId, jobs } = req.body;
 
-    if (!companyId) {
-      return res.status(400).json({ message: "Please select a company" });
+    // Normalize either/or selection: convert empty strings to null so Mongoose
+    // does not try to cast "" into an ObjectId.
+    const safeCompanyId = companyId || null;
+    const safeTravelAgentId = travelAgentId || null;
+
+    if (!safeCompanyId && !safeTravelAgentId) {
+      return res
+        .status(400)
+        .json({ message: "Please select a company or a travel agent" });
     }
     if (!Array.isArray(jobs) || jobs.length === 0) {
       return res.status(400).json({ message: "Please add at least one job" });
@@ -28,10 +36,19 @@ const createJobCategory = async (req, res) => {
       return res.status(400).json({ message: "Every job needs a title and at least one person" });
     }
 
-    // Verify company exists
-    const company = await Company.findById(companyId);
-    if (!company) {
-      return res.status(400).json({ message: "Company not found" });
+    // Verify company exists (if provided)
+    if (safeCompanyId) {
+      const company = await Company.findById(safeCompanyId);
+      if (!company) {
+        return res.status(400).json({ message: "Company not found" });
+      }
+    }
+    // Verify travel agent exists (if provided)
+    if (safeTravelAgentId) {
+      const travelAgent = await TravelAgent.findById(safeTravelAgentId);
+      if (!travelAgent) {
+        return res.status(400).json({ message: "Travel Agent not found" });
+      }
     }
 
     const jobCategory = await JobCategory.create({
@@ -39,7 +56,8 @@ const createJobCategory = async (req, res) => {
       // job title as a meaningful fallback so old and new records save safely.
       name: String(name || normalizedJobs[0].jobTitle).trim(),
       description,
-      companyId,
+      companyId: safeCompanyId,
+      travelAgentId: safeTravelAgentId,
       jobs: normalizedJobs,
       createdBy: req.user._id,
     });
@@ -72,7 +90,8 @@ const listJobCategories = async (req, res) => {
     const jobCategories = await JobCategory.find()
       .sort({ createdAt: -1 })
       .populate("createdBy", "username email")
-      .populate("companyId", "name email phone address logo");
+      .populate("companyId", "name email phone address logo")
+      .populate("travelAgentId", "name email phone address logo");
     return res.json({ categories: jobCategories });
   } catch (err) {
     console.error(err);
@@ -84,12 +103,17 @@ const listJobCategories = async (req, res) => {
 const updateJobCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, companyId, jobs, isActive } = req.body;
+    const { name, description, companyId, travelAgentId, jobs, isActive } = req.body;
+
+    // Convert empty strings to null so Mongoose does not try to cast "" into an ObjectId.
+    const safeCompanyId = companyId || null;
+    const safeTravelAgentId = travelAgentId || null;
 
     const updateData = {
       name,
       description,
-      companyId,
+      companyId: safeCompanyId,
+      travelAgentId: safeTravelAgentId,
       jobs,
       isActive,
     };

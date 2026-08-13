@@ -223,26 +223,79 @@ const companyDashboard = async (req, res) => {
     const company = await Company.findById(decoded.id);
     if (!company) return res.status(401).json({ message: "Unauthorized" });
 
-    // Get jobs for this company
-    const jobs = await Job.find({ companyId: company._id }).lean();
+    const normalize = (s = "") => String(s || "").trim().toLowerCase();
+    const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-    // For each job, find candidates that reference this job (best-effort match)
-    const jobsWithCandidates = [];
-    for (const job of jobs) {
-      const candidates = await Candidate.find({
+    // Jobs are created through the "Add Job Category" page as JobCategory
+    // documents (with an embedded jobs[] array). They may also exist as
+    // standalone Job documents (created from the Job Setup page). Load both.
+    const jobCategories = await JobCategory.find({
+      companyId: company._id,
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+    const standaloneJobs = await Job.find({ companyId: company._id })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const titleMatch = (field, value) => ({
+      [field]: {
+        $regex: new RegExp("^" + escapeRegex(normalize(value)) + "$", "i"),
+      },
+    });
+
+    const findCandidates = (jobTitle) =>
+      Candidate.find({
         $or: [
-          { companyNameEnglish: company.name },
-          { jobAppliedFor: job.jobTitle },
-          { jobAppliedFor: job.jobTitleForDisplay },
+          titleMatch("jobAppliedFor", jobTitle),
+          titleMatch("jobType", jobTitle),
+          titleMatch("companyNameEnglish", company.name),
         ],
-      }).select("name firstName lastName email status");
+      }).select(
+        "name firstName lastName email mobile phone status currentStatus cnic jobAppliedFor jobType",
+      );
 
-      jobsWithCandidates.push({ job, candidates });
+    const jobs = [];
+
+    // Jobs stored inside JobCategory documents
+    for (const cat of jobCategories) {
+      for (const job of cat.jobs || []) {
+        const candidates = await findCandidates(job.jobTitle);
+        jobs.push({
+          job: {
+            _id: job._id ? String(job._id) : `${cat._id}-${job.jobTitle}`,
+            jobTitle: job.jobTitle,
+            jobTitleForDisplay: job.jobTitle,
+            location: job.location,
+            education: job.education,
+            noOfPerson: job.noOfPerson,
+            description: job.description,
+          },
+          candidates,
+        });
+      }
+    }
+
+    // Standalone Job documents
+    for (const job of standaloneJobs) {
+      const candidates = await findCandidates(job.jobTitle);
+      jobs.push({
+        job: {
+          _id: String(job._id),
+          jobTitle: job.jobTitle,
+          jobTitleForDisplay: job.jobTitleForDisplay || job.jobTitle,
+          jobNo: job.jobNo,
+          categories: job.categories,
+          salaryAmount: job.salaryAmount,
+          salary: job.salary,
+        },
+        candidates,
+      });
     }
 
     return res.json({
       company: { _id: company._id, name: company.name, email: company.email },
-      jobs: jobsWithCandidates,
+      jobs,
     });
   } catch (err) {
     console.error(err);
