@@ -4,6 +4,9 @@ const documentSchema = new mongoose.Schema({
   title: { type: String },
   url: { type: String },
   filename: { type: String },
+  originalName: { type: String },
+  date: { type: String },
+  stage: { type: String },
   done: { type: Boolean, default: false },
   passed: { type: Boolean, default: false },
 });
@@ -178,6 +181,79 @@ const candidateSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+// Helper: dedupe documents/resumes preserving first occurrence
+function dedupeDocuments(arr) {
+  if (!Array.isArray(arr)) return arr;
+  const seen = new Set();
+  const out = [];
+  for (const item of arr) {
+    if (!item) continue;
+    const key =
+      (item.originalName && String(item.originalName).trim()) ||
+      (item.url && String(item.url).split("/").pop()) ||
+      (item.filename && String(item.filename).trim()) ||
+      JSON.stringify(item);
+    if (!key) continue;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(item);
+  }
+  return out;
+}
+
+function dedupeResumes(arr) {
+  if (!Array.isArray(arr)) return arr;
+  const seen = new Set();
+  const out = [];
+  for (const item of arr) {
+    if (!item) continue;
+    const key =
+      (item.originalName && String(item.originalName).trim()) ||
+      (item.url && String(item.url).split("/").pop()) ||
+      (item.filename && String(item.filename).trim()) ||
+      JSON.stringify(item);
+    if (!key) continue;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(item);
+  }
+  return out;
+}
+
+// Ensure duplicates are removed before saving a new candidate document
+candidateSchema.pre("save", function (next) {
+  try {
+    if (this.documents) this.documents = dedupeDocuments(this.documents);
+    if (this.resumes) this.resumes = dedupeResumes(this.resumes);
+  } catch (e) {
+    // don't block save for dedupe failures; log and continue
+    // eslint-disable-next-line no-console
+    console.warn("candidateModel dedupe pre-save failed:", e && e.message);
+  }
+  return next();
+});
+
+// When updates use findOneAndUpdate / findByIdAndUpdate, normalize any provided
+// `documents` or `resumes` arrays on the update payload to remove duplicates.
+candidateSchema.pre("findOneAndUpdate", function (next) {
+  try {
+    const upd = this.getUpdate() || {};
+    // Support both direct set and $set shapes
+    const target = upd.$set || upd;
+    if (target.documents) target.documents = dedupeDocuments(target.documents);
+    if (target.resumes) target.resumes = dedupeResumes(target.resumes);
+    // Apply back if we mutated $set
+    if (upd.$set) this.setUpdate(upd);
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      "candidateModel dedupe pre-findOneAndUpdate failed:",
+      e && e.message,
+    );
+  }
+  return next();
+});
 
 module.exports =
   mongoose.models.Candidate || mongoose.model("Candidate", candidateSchema);

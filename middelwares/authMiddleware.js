@@ -15,25 +15,23 @@ const verifyJWT = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const user = await User.findById(decoded.id).select(
-      "-password -otp -otpExpires"
+      "-password -otp -otpExpires",
     );
 
     if (!user) {
       return res.status(401).json({ message: "Unauthorized: User not found" });
     }
 
-    console.log(`[DEBUG] Auth check for user ${user.email}:`, {
-      isActive: user.isActive,
-      verified: user.verified,
-    });
+    // console.log(`[DEBUG] Auth check for user ${user.email}:`, {
+    //   isActive: user.isActive,
+    //   verified: user.verified,
+    // });
 
     if (!user.isActive) {
       console.log(`[DEBUG] User ${user.email} is inactive, blocking request`);
-      return res
-        .status(403)
-        .json({
-          message: "User account is inactive. Please contact administrator.",
-        });
+      return res.status(403).json({
+        message: "User account is inactive. Please contact administrator.",
+      });
     }
 
     if (!user.verified) {

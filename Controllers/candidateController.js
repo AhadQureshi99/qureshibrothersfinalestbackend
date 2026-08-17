@@ -233,14 +233,13 @@ const createCandidate = async (req, res) => {
           title: m.title || f.originalname,
           url: `${baseUrl}/Uploads/candidates/${f.filename}`,
           filename: f.filename,
-          done: typeof m.done === "boolean" ? m.done : false,
-          passed: typeof m.passed === "boolean" ? m.passed : false,
+          originalName: f.originalname,
+          done: String(m.done) === "true",
+          passed: String(m.passed) === "true",
+          date: m.date || "",
+          stage: m.stage || null,
         };
       });
-      candidate.resumes = req.files["documents"].map((f) => ({
-        filename: f.originalname,
-        url: baseUrl + "/Uploads/candidates/" + f.filename,
-      }));
     }
 
     await candidate.save();
@@ -322,9 +321,46 @@ const updateCandidate = async (req, res) => {
     });
 
     // Helper to read bracket-nested form fields like stage2[totalFee]
+    // Accepts multiple input shapes: flat bracketed keys (body['stage1[field]']),
+    // nested objects (body.stage1 = { field: 'value' }), or stringified forms.
     const getNested = (prefix, key) => {
-      const val = body[`${prefix}[${key}]`];
-      return val === undefined ? null : val;
+      // 1) direct bracketed field
+      const bracketKey = `${prefix}[${key}]`;
+      if (Object.prototype.hasOwnProperty.call(body, bracketKey)) {
+        return body[bracketKey];
+      }
+
+      // 2) nested object like body.stage1
+      const container = body[prefix];
+      if (container === undefined || container === null) return null;
+
+      // If container is a JSON string, try parse
+      if (typeof container === "string") {
+        // Try JSON.parse
+        try {
+          const parsed = JSON.parse(container);
+          if (parsed && typeof parsed === "object" && parsed[key] !== undefined)
+            return parsed[key];
+        } catch (e) {
+          // not JSON, continue
+        }
+        // Try URLSearchParams-style parsing (e.g. 'field=true&other=val')
+        try {
+          if (container.includes("=")) {
+            const params = new URLSearchParams(container);
+            if (params.has(key)) return params.get(key);
+          }
+        } catch (e) {
+          // ignore
+        }
+        return null;
+      }
+
+      // If container is already an object, return property
+      if (typeof container === "object") {
+        return container[key] !== undefined ? container[key] : null;
+      }
+      return null;
     };
 
     const getField = (...keys) => {
@@ -468,16 +504,6 @@ const updateCandidate = async (req, res) => {
         baseUrl + "/Uploads/candidates/" + req.files.profilePicture[0].filename;
     }
     if (req.files?.documents?.length) {
-      const uploadedResumes = req.files.documents.map((file) => ({
-        filename: file.originalname,
-        url: baseUrl + "/Uploads/candidates/" + file.filename,
-      }));
-      updateData.resumes = [
-        ...(existingCandidate.resumes || []),
-        ...(updateData.resumes || []),
-        ...uploadedResumes,
-      ];
-
       // Also store documents with metadata titles (if provided)
       let docMeta = [];
       if (req.body.documentsMeta) {
@@ -487,21 +513,68 @@ const updateCandidate = async (req, res) => {
           docMeta = [];
         }
       }
+      // Build uploaded document entries (store stored filename for dedupe)
       const uploadedDocs = req.files.documents.map((file, i) => {
         const m = docMeta[i] || {};
         return {
           title: m.title || file.originalname,
           url: baseUrl + "/Uploads/candidates/" + file.filename,
-          filename: file.originalname,
-          done: typeof m.done === "boolean" ? m.done : false,
-          passed: typeof m.passed === "boolean" ? m.passed : false,
+          filename: file.filename,
+          originalName: file.originalname,
+          done: String(m.done) === "true",
+          passed: String(m.passed) === "true",
+          date: m.date || "",
+          stage: m.stage || null,
         };
       });
-      updateData.documents = [
-        ...(existingCandidate.documents || []),
-        ...(updateData.documents || []),
-        ...uploadedDocs,
-      ];
+
+      // Merge documents: if an uploaded doc matches an existing one by
+      // originalName OR title OR url basename (and stage when provided),
+      // replace the existing entry instead of appending. This prevents
+      // duplicates when the frontend re-uploads the same logical file
+      // (stored filename may differ each upload).
+      const existingDocs = existingCandidate.documents || [];
+      const mergedDocs = [...existingDocs];
+      const basename = (u) => (u || "").split("/").pop();
+      for (const d of uploadedDocs) {
+        const matchIndex = mergedDocs.findIndex((ed) => {
+          if (!ed) return false;
+          // prefer matching by originalName when present
+          if (
+            d.originalName &&
+            ed.originalName &&
+            d.originalName === ed.originalName
+          )
+            return true;
+          if (d.title && ed.title && d.title === ed.title) return true;
+          if (
+            basename(d.url) &&
+            basename(ed.url) &&
+            basename(d.url) === basename(ed.url)
+          )
+            return true;
+          // if stage provided, prefer replacing same-stage items with same title/originalName
+          if (d.stage && ed.stage && d.stage === ed.stage) {
+            if (
+              d.originalName &&
+              ed.originalName &&
+              d.originalName === ed.originalName
+            )
+              return true;
+            if (d.title && ed.title && d.title === ed.title) return true;
+          }
+          return false;
+        });
+        if (matchIndex >= 0) {
+          // Replace existing entry with the new one (preserve _id if present)
+          const keepId = mergedDocs[matchIndex]._id;
+          mergedDocs[matchIndex] = { ...d };
+          if (keepId) mergedDocs[matchIndex]._id = keepId;
+        } else {
+          mergedDocs.push(d);
+        }
+      }
+      updateData.documents = mergedDocs;
     }
     const previousCandidate =
       await Candidate.findById(id).select("name status");
@@ -513,6 +586,20 @@ const updateCandidate = async (req, res) => {
 
     // If files are uploaded, handle them here (optional, for future)
     // Example: handle profilePicture or documents
+
+    // Debug: log parsed Stage 1 flags to help trace missing flag issue
+    console.log("Parsed Stage1 flags:", {
+      navttcAppointmentDone: updateData.navttcAppointmentDone,
+      navttcAppointmentDate: updateData.navttcAppointmentDate,
+      navttcTestDone: updateData.navttcTestDone,
+      navttcDate: updateData.navttcDate,
+      medicalAppointmentDone: updateData.medicalAppointmentDone,
+      medicalAppointmentDate: updateData.medicalAppointmentDate,
+      medicalTestDone: updateData.medicalTestDone,
+      medicalTestDate: updateData.medicalTestDate,
+      pccDone: updateData.pccDone,
+      pccDate: updateData.pccDate,
+    });
 
     const candidate = await Candidate.findByIdAndUpdate(id, updateData, {
       new: true,
