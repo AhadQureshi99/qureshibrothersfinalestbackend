@@ -66,6 +66,19 @@ app.use("/uploads", (req, res, next) => {
 });
 app.use(
   "/uploads",
+  // Serve BOTH directory spellings. Uploads of candidates/employees etc. are
+  // stored under "Uploads/..." (capital U) while other features (profile
+  // pictures, finance transactions) use "uploads/...". On Windows the
+  // filesystem is case-insensitive so "localhost" worked, but on Linux the
+  // case matters — without serving the actual "Uploads" folder the files
+  // returned 404 and images never showed on production.
+  express.static(path.join(__dirname, "Uploads"), {
+    setHeaders: (res, filePath) => {
+      // Prefer inline display when possible
+      res.setHeader("Content-Disposition", "inline");
+      // Let express set Content-Type based on the file extension as usual
+    },
+  }),
   express.static(path.join(__dirname, "uploads"), {
     setHeaders: (res, filePath) => {
       // Prefer inline display when possible
