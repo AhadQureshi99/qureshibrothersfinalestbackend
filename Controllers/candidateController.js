@@ -1,5 +1,6 @@
 const Candidate = require("../models/candidateModel");
 const { createLog } = require("./activityLogController");
+const { getFileBaseUrl } = require("../utils/fileUrl");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
@@ -205,8 +206,7 @@ const createCandidate = async (req, res) => {
       status: body.status || "Initial Registration",
     });
 
-    const baseUrl =
-      process.env.API_URL || `http://localhost:${process.env.PORT || 3001}`;
+    const baseUrl = getFileBaseUrl(req);
     // profilePicture: single file with field name 'profilePicture'
     if (
       req.files &&
@@ -492,8 +492,7 @@ const updateCandidate = async (req, res) => {
       ...(documentDetails.length > 0 ? { documentDetails } : {}),
     };
 
-    const baseUrl =
-      process.env.API_URL || `http://localhost:${process.env.PORT || 3001}`;
+    const baseUrl = getFileBaseUrl(req);
     const existingCandidate =
       await Candidate.findById(id).select("documents resumes");
     if (!existingCandidate) {
@@ -665,8 +664,7 @@ const uploadProfilePicture = async (req, res) => {
     const id = req.params.id;
     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
 
-    const baseUrl =
-      process.env.API_URL || `http://localhost:${process.env.PORT || 3001}`;
+    const baseUrl = getFileBaseUrl(req);
 
     const url = `${baseUrl}/Uploads/candidates/${req.file.filename}`;
     const candidate = await Candidate.findByIdAndUpdate(

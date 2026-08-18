@@ -8,6 +8,7 @@ const {
 const { upload } = require("../Controllers/candidateController");
 const { createLog } = require("../Controllers/activityLogController");
 const jwt = require("jsonwebtoken");
+const { getFileBaseUrl } = require("../utils/fileUrl");
 
 const router = express.Router();
 
@@ -214,8 +215,7 @@ router.put(
           }
         }
       }
-      const baseUrl =
-        process.env.API_URL || `http://localhost:${process.env.PORT || 3001}`;
+      const baseUrl = getFileBaseUrl(req);
       if (req.files?.profilePicture?.[0])
         update.profilePicture = `${baseUrl}/Uploads/candidates/${req.files.profilePicture[0].filename}`;
       if (req.files?.documents?.length)

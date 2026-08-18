@@ -2,6 +2,7 @@ const Employee = require("../models/employeeModel");
 const Attendance = require("../models/employeeAttendanceModel");
 const Payroll = require("../models/employeePayrollModel");
 const { createLog } = require("./activityLogController");
+const { getFileBaseUrl } = require("../utils/fileUrl");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
@@ -34,8 +35,7 @@ const employeeFileFields = [
 
 // Build an object of file URLs from req.files (single file per field)
 const buildFileUrls = (req) => {
-  const baseUrl =
-    process.env.API_URL || `http://localhost:${process.env.PORT || 3001}`;
+  const baseUrl = getFileBaseUrl(req);
   const urls = {};
   if (!req.files) return urls;
   employeeFileFields.forEach((field) => {
