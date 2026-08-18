@@ -99,7 +99,7 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({ storage, limits: { fileSize: 25 * 1024 * 1024 } });
 
 const parseJsonField = (value, fallback = []) => {
   if (typeof value !== "string") return value || fallback;
