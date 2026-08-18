@@ -10,10 +10,11 @@ const {
   deleteCandidate,
 } = require("../Controllers/candidateController");
 
-// Accept profilePicture (single) and documents (array)
+// Accept profilePicture (single), documents (array), and resumes (array)
 const multerFields = upload.fields([
   { name: "profilePicture", maxCount: 1 },
   { name: "documents", maxCount: 30 },
+  { name: "resumes", maxCount: 30 },
 ]);
 
 router.get("/", getCandidates);

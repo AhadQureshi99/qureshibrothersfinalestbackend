@@ -242,6 +242,16 @@ const createCandidate = async (req, res) => {
       });
     }
 
+    // resumes: files uploaded from the "Upload Resumes" section go into the
+    // candidate's resumes array (not documents).
+    if (req.files && req.files["resumes"]) {
+      const uploadedResumes = req.files["resumes"].map((f) => ({
+        filename: f.originalname,
+        url: `${baseUrl}/Uploads/candidates/${f.filename}`,
+      }));
+      candidate.resumes = [...(candidate.resumes || []), ...uploadedResumes];
+    }
+
     await candidate.save();
     // Log activity
     // Try to get the user who created the candidate
@@ -574,6 +584,39 @@ const updateCandidate = async (req, res) => {
         }
       }
       updateData.documents = mergedDocs;
+    }
+
+    // resumes: files uploaded from the "Upload Resumes" section. Merge them
+    // into the resumes[] array (dedupe by originalName/url so "Save & Continue"
+    // re-uploads don't create duplicates).
+    if (req.files?.resumes?.length) {
+      const uploadedResumes = req.files.resumes.map((file) => ({
+        filename: file.originalname,
+        url: baseUrl + "/Uploads/candidates/" + file.filename,
+      }));
+      const baseName = (u) => (u || "").split("/").pop();
+      const existingResumes = Array.isArray(updateData.resumes)
+        ? updateData.resumes
+        : existingCandidate.resumes || [];
+      const mergedResumes = Array.isArray(existingResumes)
+        ? [...existingResumes]
+        : [];
+      for (const r of uploadedResumes) {
+        const matchIndex = mergedResumes.findIndex(
+          (er) =>
+            er &&
+            (baseName(er.url) === baseName(r.url) ||
+              (er.filename && er.filename === r.filename)),
+        );
+        if (matchIndex >= 0) {
+          const keepId = mergedResumes[matchIndex]._id;
+          mergedResumes[matchIndex] = { ...r };
+          if (keepId) mergedResumes[matchIndex]._id = keepId;
+        } else {
+          mergedResumes.push(r);
+        }
+      }
+      updateData.resumes = mergedResumes;
     }
     const previousCandidate =
       await Candidate.findById(id).select("name status");
