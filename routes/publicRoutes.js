@@ -78,6 +78,10 @@ router.post("/candidates/initial-registration", async (req, res) => {
       email: String(email).trim(),
       mobile: cleanedMobile,
       profession: cleanedProfession,
+      // The public "Job Type" dropdown posts under `profession`; mirror it into
+      // jobType / jobAppliedFor so the candidate shows up on company dashboards.
+      jobType: cleanedProfession,
+      jobAppliedFor: cleanedProfession,
       experience: String(experience).trim(),
       address: String(address).trim(),
       status: "Initial Registration",
