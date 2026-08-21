@@ -223,7 +223,10 @@ const companyDashboard = async (req, res) => {
     const company = await Company.findById(decoded.id);
     if (!company) return res.status(401).json({ message: "Unauthorized" });
 
-    const normalize = (s = "") => String(s || "").trim().toLowerCase();
+    const normalize = (s = "") =>
+      String(s || "")
+        .trim()
+        .toLowerCase();
     const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
     // Jobs are created through the "Add Job Category" page as JobCategory
@@ -294,7 +297,13 @@ const companyDashboard = async (req, res) => {
     }
 
     return res.json({
-      company: { _id: company._id, name: company.name, email: company.email },
+      company: {
+        _id: company._id,
+        name: company.name,
+        email: company.email,
+        phone: company.phone,
+        address: company.address,
+      },
       jobs,
     });
   } catch (err) {
