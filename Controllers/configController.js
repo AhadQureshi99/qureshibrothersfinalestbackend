@@ -1,6 +1,7 @@
 const PaymentAgent = require("../models/paymentAgentModel");
 const path = require("path");
 const fs = require("fs");
+const { createLog } = require("./activityLogController");
 
 const nextAgentCode = async () => {
   const agents = await PaymentAgent.find({}, "code").lean();
@@ -35,8 +36,16 @@ const createPaymentAgent = async (req, res) => {
     for (let attempt = 0; attempt < 5; attempt += 1) {
       try {
         paymentAgent = await PaymentAgent.create({
-          code: await nextAgentCode(), name, location, cnic, passportNo,
-          primaryEmail, secondaryEmail, primaryPhone, secondaryPhone, files,
+          code: await nextAgentCode(),
+          name,
+          location,
+          cnic,
+          passportNo,
+          primaryEmail,
+          secondaryEmail,
+          primaryPhone,
+          secondaryPhone,
+          files,
           createdBy: req.user._id,
         });
         break;
@@ -44,6 +53,17 @@ const createPaymentAgent = async (req, res) => {
         if (error.code !== 11000 || attempt === 4) throw error;
       }
     }
+
+    await createLog({
+      action: "created",
+      entityType: "Configuration",
+      entityId: paymentAgent._id,
+      entityName: paymentAgent.name,
+      description: `${req.user?.username || "System"} created Configuration: ${paymentAgent.name}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: { module: "Payment Agent" },
+    });
 
     return res.status(201).json({
       message: "Payment Agent created successfully",
@@ -117,6 +137,17 @@ const updatePaymentAgent = async (req, res) => {
       return res.status(404).json({ message: "Payment Agent not found" });
     }
 
+    await createLog({
+      action: "updated",
+      entityType: "Configuration",
+      entityId: updatedAgent._id,
+      entityName: updatedAgent.name,
+      description: `${req.user?.username || "System"} updated Configuration: ${updatedAgent.name}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: { module: "Payment Agent" },
+    });
+
     return res.json({
       message: "Payment Agent updated successfully",
       paymentAgent: updatedAgent,
@@ -151,6 +182,16 @@ const deletePaymentAgent = async (req, res) => {
     }
 
     await PaymentAgent.findByIdAndDelete(id);
+    await createLog({
+      action: "deleted",
+      entityType: "Configuration",
+      entityId: agent._id,
+      entityName: agent.name,
+      description: `${req.user?.username || "System"} deleted Configuration: ${agent._id}`,
+      performedBy: req.user?.username || "System",
+      performedById: req.user?._id,
+      meta: { module: "Payment Agent" },
+    });
     return res.json({ message: "Payment Agent deleted successfully" });
   } catch (err) {
     console.error(err);

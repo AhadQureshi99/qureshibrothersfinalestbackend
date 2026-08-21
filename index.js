@@ -96,11 +96,7 @@ app.use(
 );
 app.use("/api/expenses/", require("./routes/expenseRoutes"));
 app.use("/api/candidates/", require("./routes/candidateRoutes"));
-app.use(
-  "/api/config/",
-  activityAudit("Configuration"),
-  require("./routes/configRoutes"),
-);
+app.use("/api/config/", require("./routes/configRoutes"));
 app.use(
   "/api/config/recruitment-agents/",
   require("./routes/recruitmentAgentRoutes"),

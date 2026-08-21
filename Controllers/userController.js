@@ -804,7 +804,31 @@ const getUserLogs = async (req, res) => {
       .sort({ createdAt: -1 })
       .populate("performedById", "username email role");
 
-    res.status(200).json({ logs });
+    const dedupedLogs = [];
+    const seen = new Set();
+
+    for (const log of logs) {
+      const actorKey =
+        log.performedById?._id?.toString?.() ||
+        log.performedById?.toString?.() ||
+        String(log.performedBy || "system");
+      const recordName = String(log.entityName || "").trim();
+      const action = String(log.action || "").trim();
+      const createdAt = new Date(log.createdAt);
+      const timeBucket = Number.isNaN(createdAt.getTime())
+        ? "invalid"
+        : new Date(
+            createdAt.getTime() - (createdAt.getTime() % 60000),
+          ).toISOString();
+
+      const fingerprint = `${actorKey}|${recordName}|${action}|${timeBucket}`;
+
+      if (seen.has(fingerprint)) continue;
+      seen.add(fingerprint);
+      dedupedLogs.push(log);
+    }
+
+    res.status(200).json({ logs: dedupedLogs });
   } catch (error) {
     console.error("getUserLogs error:", error);
     res.status(500).json({ message: error.message });
