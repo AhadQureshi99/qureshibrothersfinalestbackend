@@ -18,6 +18,7 @@ const corsOptions = {
     "https://quershi-brother-frountend.vercel.app",
     "https://api.codestechvista.com",
     "https://dashboard.qureshibrothers.com",
+    "http://company.qureshibrothers.com",
     "https://qureshibrothers.com",
     "https://quershi-brithers-website.vercel.app",
     process.env.PUBLIC_WEBSITE_ORIGIN,
