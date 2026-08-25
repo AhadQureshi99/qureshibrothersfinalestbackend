@@ -21,6 +21,7 @@ const corsOptions = {
     "http://company.qureshibrothers.com",
     "https://qureshibrothers.com",
     "https://quershi-brithers-website.vercel.app",
+    "https://quershibrother-company-dashboard.vercel.app",
     process.env.PUBLIC_WEBSITE_ORIGIN,
     "https://api.aaaogo.com",
   ].filter(Boolean),
