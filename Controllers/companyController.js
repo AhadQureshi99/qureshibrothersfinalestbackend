@@ -255,7 +255,7 @@ const companyDashboard = async (req, res) => {
           titleMatch("companyNameEnglish", company.name),
         ],
       }).select(
-        "name firstName lastName email mobile phone status currentStatus cnic jobAppliedFor jobType",
+        "name firstName lastName email mobile phone status currentStatus cnic jobAppliedFor jobType passportNumber passport",
       );
 
     const jobs = [];

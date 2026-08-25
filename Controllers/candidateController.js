@@ -619,7 +619,7 @@ const updateCandidate = async (req, res) => {
       updateData.resumes = mergedResumes;
     }
     const previousCandidate =
-      await Candidate.findById(id).select("name status");
+      await Candidate.findById(id).select("name status totalFee depositedFee");
 
     // If multipart/form-data, status may be a string, so ensure it's set
     if (req.body.status) {
@@ -672,6 +672,11 @@ const updateCandidate = async (req, res) => {
 
     const statusChanged =
       updateData.status && updateData.status !== previousCandidate?.status;
+    const feeChanged =
+      (updateData.totalFee !== undefined &&
+        String(updateData.totalFee) !== String(previousCandidate?.totalFee ?? "")) ||
+      (updateData.depositedFee !== undefined &&
+        String(updateData.depositedFee) !== String(previousCandidate?.depositedFee ?? ""));
     const action = statusChanged ? "status changed" : "updated";
     await createLog({
       action,
@@ -690,6 +695,24 @@ const updateCandidate = async (req, res) => {
           }
         : {},
     });
+
+    if (feeChanged) {
+      await createLog({
+        action: "paid",
+        entityType: "Finance",
+        entityId: candidate._id,
+        entityName: candidate.name,
+        description: `Candidate ${candidate.name} fee updated by ${req.user?.username || "System"}. Total: ${candidate.totalFee || "0"}, Deposited: ${candidate.depositedFee || "0"}`,
+        performedBy: req.user?.username || "System",
+        performedById: req.user?._id,
+        meta: {
+          candidateId: candidate._id,
+          totalFee: candidate.totalFee || 0,
+          depositedFee: candidate.depositedFee || 0,
+        },
+      });
+    }
+
     res.status(200).json({
       message: "Candidate updated successfully",
       candidate,
