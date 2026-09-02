@@ -8,9 +8,9 @@
   "author": "",
   "license": "ISC",
   "scripts": {
-    "start": "node index.js",
+    "start": "node api.js && node index.js",
     "server": "nodemon ./index.js",
-    "build": "react-scripts build",
+    "build": "node api.js && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
